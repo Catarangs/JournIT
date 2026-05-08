@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JournIT - Sign Up</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="auth-body">
+
+    <div class="auth-wrapper">
+        <div class="auth-card">
+
+            <!-- LOGO AREA: logo image + brand name on the same line -->
+            <div class="auth-logo-area">
+                <img src="images/logo.png"
+                     alt="JournIT Logo"
+                     class="auth-logo-img">
+                <span class="auth-brand-name">JournIT</span>
+            </div>
+
+            <!-- MAIN HEADING -->
+            <h1 class="auth-heading">Create account</h1>
+            <p class="auth-subtext">Plan your first adventure today.</p>
+
+            <!-- FORM GROUP: -->
+            <div class="auth-form">
+
+                <!-- USERNAME FIELD -->
+                <label class="auth-label" for="username">Username</label>
+                <input class="auth-input"
+                       type="text"
+                       id="username"
+                       placeholder="Choose a username">
+
+                <!-- PASSWORD FIELD -->
+                <label class="auth-label" for="password">Password</label>
+                <input class="auth-input"
+                       type="password"
+                       id="password"
+                       placeholder="Create a password">
+
+                <!-- SIGN UP BUTTON -->
+                <button class="auth-btn" onclick="signUp()">
+                    Sign Up
+                </button>
+
+                <!-- navigates back to signin page -->
+                <p class="auth-switch">
+                    Already have an account?
+                    <a href="signin.html" class="auth-link">Sign In</a>
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="auth-footer">
+        <div class="auth-footer-content">
+            <span>Contact us: 09938653644</span>
+            <span>Email Us: JournIT@gmail.com</span>
+            <span class="auth-footer-version">
+                JournIT &nbsp;·&nbsp; Version 1.0.0
+            </span>
+        </div>
+    </footer>
+
+    <script src="js/script.js"></script>
+
+</body>
+</html>

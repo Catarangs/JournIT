@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JournIT - Home</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="main-body">
+
+<!-- Header -->
+<header class="main-header">
+    <div class="header-inner">
+
+        <!-- LEFT SIDE: logo image and brand name -->
+        <div class="header-left">
+            <img src="images/logo.png"
+                 alt="JournIT Logo"
+                 class="header-logo">
+            <span class="header-brand">JournIT</span>
+        </div>
+
+        <!-- RIGHT SIDE: navigation links -->
+        <!-- active-page class adds the circle indicator in CSS -->
+        <nav class="main-nav">
+            <a href="index.html"
+               class="nav-link active-page">Home</a>
+            <a href="dashboard.html"
+               class="nav-link">Dashboard</a>
+            <a href="account.html"
+               class="nav-link">Account</a>
+        </nav>
+
+    </div>
+</header>
+
+<!-- HERO SLIDESHOW SECTION -->
+<div class="hero-section">
+
+    <!-- SLIDE 1 -->
+    <div class="slide active"
+         style="background-image: url('images/hero1.jpg')">
+    </div>
+
+    <!-- SLIDES 2-5 -->
+    <div class="slide"
+         style="background-image: url('images/hero2.jpg')">
+    </div>
+
+    <div class="slide"
+         style="background-image: url('images/hero3.jpg')">
+    </div>
+
+    <div class="slide"
+         style="background-image: url('images/hero4.jpg')">
+    </div>
+
+    <div class="slide"
+         style="background-image: url('images/hero5.jpg')">
+    </div>
+
+    <!-- TEXT OVERLAY -->
+    <div class="hero-text-overlay">
+        <h1 class="hero-title">JournIT</h1>
+        <p class="hero-tagline">
+            Your personal editorial for every adventure.
+        </p>
+    </div>
+
+    <!-- SLIDE DOTS -->
+    <!-- data-index tells JavaScript which slide each dot controls -->
+    <div class="slide-dots">
+        <span class="dot active" data-index="0"></span>
+        <span class="dot" data-index="1"></span>
+        <span class="dot" data-index="2"></span>
+        <span class="dot" data-index="3"></span>
+        <span class="dot" data-index="4"></span>
+    </div>
+
+</div>
+
+
+<!-- THREE NAVIGATION CARDS -->
+<div class="home-nav-cards">
+
+    <button class="nav-card" onclick="scrollToPlans()">
+        <img src="images/map-icon.png" alt="Map" class="nav-card-icon">
+        <span class="nav-card-label">Current Plans</span>
+    </button>
+
+    <button class="nav-card"
+            onclick="window.location.href='dashboard.html'">
+        <img src="images/grid-icon.png" alt="Dashboard" class="nav-card-icon">
+        <span class="nav-card-label">Dashboard</span>
+    </button>
+
+    <button class="nav-card"
+            onclick="window.location.href='account.html'">
+        <img src="images/user-icon.png" alt="Account" class="nav-card-icon">
+        <span class="nav-card-label">Account</span>
+    </button>
+
+</div>
+
+
+<!-- PLANS SECTION
+     This section holds two states.
+     JavaScript shows one and hides the other.
+     id="plans-section" lets scrollToPlans() find it -->
+<section id="plans-section">
+
+    <!-- STATE 1: NO PLAN BEING TRACKED
+         This is the default state shown on login
+         JavaScript hides this when tracking starts -->
+    <div id="no-plan-state">
+
+        <div class="empty-state-card">
+
+            <!-- COMPASS ICON in a light circle -->
+            <div class="empty-state-icon-wrap">
+                <img src="images/compass-icon.png" alt="Compass" class="empty-state-icon">
+            </div>
+
+            <!-- EMPTY STATE MESSAGE -->
+            <h2 class="empty-state-title">
+                No plans being tracked yet
+            </h2>
+            <p class="empty-state-subtitle">
+                Ready for your next adventure?
+                Head over to your dashboard to
+                create or track an itinerary.
+            </p>
+
+            <!-- BROWSE BUTTON: goes to dashboard -->
+            <button class="browse-btn"
+                    onclick="window.location.href=
+                    'dashboard.html'">
+                Browse your plans
+            </button>
+
+        </div>
+
+    </div>
+
+    <!-- STATE 2: A PLAN IS BEING TRACKED
+         Hidden by default using class="hidden"
+         JavaScript removes "hidden" when user
+         clicks Track on a plan in the dashboard -->
+    <div id="active-plan-state" class="hidden">
+
+        <!-- TWO COLUMN LAYOUT -->
+        <!-- Left: plan checklist. Right: progress tracker -->
+        <div class="tracking-layout">
+
+            <!-- LEFT COLUMN: plan details and checklist -->
+            <div class="tracking-left">
+
+                <p class="tracking-label">CURRENTLY TRACKING</p>
+
+                <!-- PLAN NAME: filled by JavaScript -->
+                <h2 id="tracking-plan-name"></h2>
+
+                <!-- PLAN SUMMARY: days and total budget -->
+                <p class="tracking-summary">
+                    <span id="tracking-days-count"></span>
+                    &nbsp;·&nbsp;
+                    Total Budget:
+                    <span id="tracking-budget"></span>
+                </p>
+
+                <!-- STOP TRACKING BUTTON -->
+                <!-- onclick calls stopTracking() in script.js -->
+                <!-- That function returns homepage to default state -->
+                <button class="stop-tracking-btn"
+                        onclick="stopTracking()">
+                    &#x2297; Stop tracking
+                </button>
+                <!-- &#x2297= ⊗ symbol in html -->
+
+                <!-- DAY BOXES CONTAINER -->
+                <!-- JavaScript builds the day boxes here -->
+                <!-- Each day gets activities with checkboxes -->
+                <div id="tracking-days">
+                    <!-- Day boxes inserted here by js -->
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: visual progress tracker -->
+            <div class="tracking-right">
+
+                <div class="progress-card">
+
+                    <h3 class="progress-title">
+                        Journey Progress
+                    </h3>
+
+                    <!-- Percentage Tracker -->
+                    <div class="donut-wrap">
+                        <!-- PERCENTAGE TEXT -->
+                        <!-- Center Positioned by css in large font -->
+                        <div class="donut-center">
+                            <span id="progress-percent">0%</span>
+                            <span class="donut-label">COMPLETE</span>
+                        </div>
+
+                    </div>
+
+                    <!-- ACTIVITIES COUNTER CARD -->
+                    <div class="stat-card">
+                        <p class="stat-label">Activities</p>
+                        <!-- Format: "3 / 9" — filled by JavaScript -->
+                        <p class="stat-value">
+                            <span id="activities-done">0</span>
+                            /
+                            <span id="activities-total">0</span>
+                        </p>
+                    </div>
+
+                    <!-- BUDGET SPENT CARD -->
+                    <div class="stat-card">
+                        <p class="stat-label">Budget Spent</p>
+                        <p class="stat-value">
+                            <span id="budget-spent">$0</span>
+                            /
+                            <span id="budget-total">$0</span>
+                        </p>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- FOOTER -->
+<footer class="main-footer">
+    <div class="footer-inner">
+        <div class="footer-left">
+            <span>Contact us: 09938653644</span>
+            <span>Email Us: JournIT@gmail.com</span>
+        </div>
+        <div class="footer-right">
+            <span class="footer-brand">JournIT</span>
+            <span class="footer-version">Version 1.0.0</span>
+        </div>
+    </div>
+</footer>
+
+
+<!-- SCRIPT -->
+<script src="js/script.js"></script>
+
+</body>
+</html>

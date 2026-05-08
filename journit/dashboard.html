@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JournIT - Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="main-body">
+
+
+<!-- ═══════════════════════════════════════════════
+     HEADER
+     Same sticky header as index.html.
+     Only difference: Dashboard link gets active-page.
+═══════════════════════════════════════════════ -->
+<header class="main-header">
+    <div class="header-inner">
+        <div class="header-left">
+            <img src="images/logo.png"
+                 alt="JournIT Logo"
+                 class="header-logo">
+            <span class="header-brand">JournIT</span>
+        </div>
+        <nav class="main-nav">
+            <a href="index.html"
+               class="nav-link">Home</a>
+            <!-- active-page is on Dashboard this time -->
+            <a href="dashboard.html"
+               class="nav-link active-page">Dashboard</a>
+            <a href="account.html"
+               class="nav-link">Account</a>
+        </nav>
+    </div>
+</header>
+
+
+<!-- ═══════════════════════════════════════════════
+     MAIN CONTENT AREA
+     Contains the page heading, Add Plan button,
+     and the empty grid that JS will fill with cards.
+═══════════════════════════════════════════════ -->
+<main class="dashboard-main">
+
+    <!-- TOP BAR: heading on left, Add Plan button on right -->
+    <!-- CSS flexbox with space-between pushes them apart -->
+    <div class="dashboard-top-bar">
+        <div class="dashboard-heading-group">
+            <h1 class="dashboard-heading">Your Itineraries</h1>
+            <p class="dashboard-subtext">
+                Manage and track your upcoming journeys.
+            </p>
+        </div>
+
+        <!-- ADD PLAN BUTTON: opens Scene 4 modal -->
+        <button class="add-plan-btn"
+                onclick="openAddPlanStep1()">
+            + Add Plan
+        </button>
+    </div>
+
+    <!-- PLANS GRID: starts empty, JS fills it with plan cards -->
+    <!-- Each card JS creates will have:
+         data-id = the plan's id from the database
+         data-name = the plan's name
+         onclick = openPlan(this) to expand that plan -->
+    <div id="plans-grid">
+        <!-- Plan cards inserted here by JavaScript -->
+    </div>
+
+</main>
+
+
+<!-- ═══════════════════════════════════════════════
+     SCENE 2 — EXPANDED PLAN MODAL
+     Opens when user clicks a plan card.
+     modal-overlay covers the whole screen.
+     modal-box is the white card on top.
+     hidden class makes it invisible by default.
+═══════════════════════════════════════════════ -->
+<div id="expanded-plan-modal"
+     class="modal-overlay hidden">
+
+    <div class="expanded-modal-box">
+
+        <!-- STICKY HEADER: stays visible while scrolling days -->
+        <!-- position:sticky in CSS makes this follow scroll -->
+        <div class="expanded-sticky-header">
+
+            <div class="expanded-header-top">
+
+                <div class="expanded-header-left">
+
+                    <!-- PLAN NAME: filled by JavaScript -->
+                    <h2 id="expanded-plan-name"></h2>
+
+                    <!-- PLAN META: days count and total budget -->
+                    <p class="expanded-plan-meta">
+                        <span id="expanded-days-count"></span>
+                        &nbsp;·&nbsp;
+                        Total Budget:
+                        <span id="expanded-budget"></span>
+
+                        <!-- CURRENTLY TRACKING BADGE -->
+                        <!-- hidden by default, JS shows it when
+                             this plan is the one being tracked -->
+                        &nbsp;·&nbsp;
+                        <span id="currently-tracking-badge"
+                              class="hidden">
+                            &#9679; Currently Tracking
+                        </span>
+                    </p>
+
+                </div>
+
+                <!-- ACTION BUTTONS: Track, Edit, Close -->
+                <div class="expanded-header-actions">
+
+                    <!-- TRACK BUTTON: marks plan as tracked -->
+                    <!-- JS will disable this if already tracking -->
+                    <button class="track-btn"
+                            id="track-btn"
+                            onclick="trackPlan()">
+                        <img src="images/map-icon.png"
+                             alt="Track"
+                             class="btn-icon">
+                        Track
+                    </button>
+
+                    <!-- EDIT BUTTON: opens edit modal -->
+                    <button class="edit-btn"
+                            onclick="openEditModal()">
+                        <img src="images/edit-icon.png"
+                             alt="Edit"
+                             class="btn-icon">
+                        Edit
+                    </button>
+
+                    <!-- CLOSE BUTTON: closes this modal -->
+                    <button class="close-modal-btn"
+                            onclick="closeExpandedModal()">
+                        &#x2715;
+                    </button>
+                    <!-- &#x2715; is the HTML entity for × symbol -->
+
+                </div>
+
+            </div>
+
+        </div>
+        <!-- end expanded-sticky-header -->
+
+        <!-- DAY CONTENT: JS builds day boxes here -->
+        <!-- Each day box will have date, budget badge,
+             and activity rows with checkboxes -->
+        <div id="expanded-days-content">
+            <!-- Day boxes inserted here by JavaScript -->
+        </div>
+
+    </div>
+    <!-- end expanded-modal-box -->
+
+</div>
+<!-- end expanded-plan-modal -->
+
+
+<!-- ═══════════════════════════════════════════════
+     SCENE 3 — DELETE CONFIRMATION MODAL
+     Opens when trash icon on a card is clicked.
+     Shows the plan name in the warning message.
+     Cancel returns to normal. Delete removes the plan.
+═══════════════════════════════════════════════ -->
+<div id="delete-modal"
+     class="modal-overlay hidden">
+
+    <div class="modal-box">
+
+        <!-- WARNING ICON -->
+        <div class="delete-modal-icon">
+            <img src="images/warning-icon.png"
+                 alt="Warning"
+                 class="warning-icon">
+        </div>
+
+        <!-- TITLE -->
+        <h3 class="delete-modal-title">Delete Itinerary</h3>
+
+        <!-- MESSAGE: plan name inserted by JavaScript -->
+        <!-- JS writes: Are you sure you want to delete "BirthDate"? -->
+        <p class="delete-modal-message" id="delete-modal-message">
+            Are you sure you want to delete this plan?
+            This action cannot be undone.
+        </p>
+
+        <!-- BUTTONS: side by side -->
+        <div class="delete-modal-buttons">
+
+            <!-- CANCEL: closes modal, does nothing -->
+            <button class="cancel-delete-btn"
+                    onclick="closeDeleteModal()">
+                Cancel
+            </button>
+
+            <!-- DELETE: calls deleteplan() in script.js -->
+            <!-- JS sends delete request to PHP -->
+            <button class="confirm-delete-btn"
+                    onclick="confirmDelete()">
+                Delete
+            </button>
+
+        </div>
+
+    </div>
+    <!-- end modal-box -->
+
+</div>
+<!-- end delete-modal -->
+
+
+<!-- ═══════════════════════════════════════════════
+     SCENE 4 — ADD PLAN MODAL STEP 1
+     First popup when user clicks Add Plan.
+     Asks only for the journey name.
+     Continue button only works if name is typed.
+═══════════════════════════════════════════════ -->
+<div id="add-plan-modal-1"
+     class="modal-overlay hidden">
+
+    <div class="modal-box">
+
+        <!-- CLOSE BUTTON: top right corner -->
+        <button class="close-modal-btn modal-close-top"
+                onclick="closeAddPlanModal()">
+            &#x2715;
+        </button>
+
+        <!-- HEADING -->
+        <h3 class="modal-heading">Name your journey</h3>
+
+        <!-- DIVIDER LINE -->
+        <hr class="modal-divider">
+
+        <!-- INNER CONTENT AREA: light background section -->
+        <div class="modal-inner-content">
+            <p class="modal-field-label">
+                What are you calling this itinerary?
+            </p>
+            <!-- NAME INPUT: JS validates this is not empty -->
+            <!-- id lets JS read the value when Continue is clicked -->
+            <input type="text"
+                   id="new-plan-name-input"
+                   class="modal-text-input"
+                   placeholder="e.g., Summer in Kyoto">
+        </div>
+
+        <!-- DIVIDER LINE -->
+        <hr class="modal-divider">
+
+        <!-- CONTINUE BUTTON: calls JS function that validates -->
+        <!-- If input is empty, JS stops and shows error message -->
+        <!-- If input has text, JS moves to Step 2 -->
+        <div class="modal-footer-row">
+            <button class="continue-btn"
+                    onclick="proceedToStep2()">
+                Continue &#x2192;
+            </button>
+            <!-- &#x2192; is the HTML entity for → arrow -->
+        </div>
+
+    </div>
+
+</div>
+<!-- end add-plan-modal-1 -->
+
+
+<!-- ═══════════════════════════════════════════════
+     SCENE 5 — ADD PLAN MODAL STEP 2
+     Day builder. Appears after naming the journey.
+     Shows the journey name at the top.
+     JS builds day blocks inside add-days-container.
+     Each day has: date picker, budget, activities.
+     Add Another Day and Complete Plan buttons.
+═══════════════════════════════════════════════ -->
+<div id="add-plan-modal-2"
+     class="modal-overlay hidden">
+
+    <div class="modal-box modal-box-large">
+
+        <!-- CLOSE BUTTON -->
+        <button class="close-modal-btn modal-close-top"
+                onclick="closeAddPlanModal()">
+            &#x2715;
+        </button>
+
+        <!-- PLAN NAME AT TOP: filled by JS from Step 1 -->
+        <!-- type="text" makes it editable so user can still
+             change the name at this stage if they want to -->
+        <input type="text"
+               id="add-plan-name-display"
+               class="plan-name-edit-input"
+               placeholder="Journey name">
+
+        <!-- PLAN SUMMARY: days count updates as days are added -->
+        <p class="modal-plan-summary">
+            <span id="add-days-count">0</span> Days
+            &nbsp;·&nbsp;
+            Total Budget: $<span id="add-budget-total">0</span>
+        </p>
+
+        <!-- DIVIDER -->
+        <hr class="modal-divider">
+
+        <!-- DAYS CONTAINER: JS builds day blocks here -->
+        <!-- When user clicks Add Another Day, JS creates
+             a new day block and appends it here -->
+        <div id="add-days-container">
+            <!-- Day blocks built by JavaScript -->
+        </div>
+
+        <!-- ADD ANOTHER DAY BUTTON -->
+        <!-- JS reads the last date input, adds 1 day,
+             and creates a new day block with that date -->
+        <button class="add-day-btn"
+                onclick="addAnotherDay('add')">
+            + Add another day
+        </button>
+
+        <!-- DIVIDER -->
+        <hr class="modal-divider">
+
+        <!-- BOTTOM BUTTONS: Back and Complete Plan -->
+        <div class="modal-bottom-row">
+
+            <!-- BACK: returns to Step 1 -->
+            <button class="back-btn"
+                    onclick="backToStep1()">
+                Back
+            </button>
+
+            <!-- COMPLETE PLAN: saves to database via JS + PHP -->
+            <button class="complete-plan-btn"
+                    onclick="savePlan()">
+                &#x2713; Complete Plan
+            </button>
+            <!-- &#x2713; is the HTML entity for ✓ checkmark -->
+
+        </div>
+
+    </div>
+
+</div>
+<!-- end add-plan-modal-2 -->
+
+
+<!-- ═══════════════════════════════════════════════
+     SCENE 6 — EDIT PLAN MODAL
+     Same layout as Scene 5.
+     Pre-filled with existing plan data by JavaScript.
+     Save sends updated data to PHP.
+     Cancel closes without saving.
+═══════════════════════════════════════════════ -->
+<div id="edit-plan-modal"
+     class="modal-overlay hidden">
+
+    <div class="modal-box modal-box-large">
+
+        <!-- CLOSE BUTTON -->
+        <button class="close-modal-btn modal-close-top"
+                onclick="closeEditModal()">
+            &#x2715;
+        </button>
+
+        <!-- EDITABLE PLAN NAME: pre-filled by JS -->
+        <input type="text"
+               id="edit-plan-name-input"
+               class="plan-name-edit-input"
+               placeholder="Journey name">
+
+        <!-- PLAN SUMMARY -->
+        <p class="modal-plan-summary">
+            <span id="edit-days-count">0</span> Days
+            &nbsp;·&nbsp;
+            Total Budget: $<span id="edit-budget-total">0</span>
+        </p>
+
+        <!-- DIVIDER -->
+        <hr class="modal-divider">
+
+        <!-- DAYS CONTAINER: JS fills with existing day data -->
+        <div id="edit-days-container">
+            <!-- Pre-filled day blocks built by JavaScript -->
+        </div>
+
+        <!-- ADD ANOTHER DAY BUTTON -->
+        <button class="add-day-btn"
+                onclick="addAnotherDay('edit')">
+            + Add another day
+        </button>
+
+        <!-- DIVIDER -->
+        <hr class="modal-divider">
+
+        <!-- BOTTOM BUTTONS: Cancel and Save -->
+        <div class="modal-bottom-row">
+
+            <!-- CANCEL: closes modal without saving -->
+            <button class="back-btn"
+                    onclick="closeEditModal()">
+                Cancel
+            </button>
+
+            <!-- SAVE: sends updated data to PHP -->
+            <button class="complete-plan-btn"
+                    onclick="saveEditedPlan()">
+                &#128190; Save
+            </button>
+            <!-- &#128190; is the HTML entity for 💾 floppy disk -->
+
+        </div>
+
+    </div>
+
+</div>
+<!-- end edit-plan-modal -->
+
+
+<!-- ═══════════════════════════════════════════════
+     FOOTER
+     Same footer as index.html.
+     Identical class names — CSS styles both the same.
+═══════════════════════════════════════════════ -->
+<footer class="main-footer">
+    <div class="footer-inner">
+        <div class="footer-left">
+            <span>Contact us: 09938653644</span>
+            <span>Email Us: JournIT@gmail.com</span>
+        </div>
+        <div class="footer-right">
+            <span class="footer-brand">JournIT</span>
+            <span class="footer-version">Version 1.0.0</span>
+        </div>
+    </div>
+</footer>
+
+
+<!-- SCRIPT: always last -->
+<script src="js/script.js"></script>
+
+</body>
+</html>
