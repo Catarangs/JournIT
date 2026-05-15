@@ -1,10 +1,6 @@
-// 1. SUPABASE CONFIGURATION
 const SUPABASE_URL = 'https://vptvzuzydcweouodwvuy.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_m1uCdwzt48lWw_WvGg23ag_nucwaJnz';
-
-// Initialize the Supabase Client
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
 /* ═══════════════════════════════════════════════════
    JOURNIT — script.js
    One JavaScript file for all pages.
