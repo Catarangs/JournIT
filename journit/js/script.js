@@ -32,48 +32,17 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 ───────────────────────────────────────────────── */
 
 document.addEventListener("DOMContentLoaded", function() {
-
-    /* document.body.id tells us which page we are on.
-       We set a unique id on each page's <body> tag.
-       Wait — we used class not id on body.
-       So instead we check the page title or URL. */
-
     let page = window.location.pathname;
-    /* window.location.pathname is the current URL path
-       e.g. "/journit/index.html" or "/journit/dashboard.html" */
-
-    if (page.includes("signin") || page.includes("signup")) {
-        /* Auth pages — nothing to initialize */
-        return;
-    }
-
-    if (page.includes("admin-account")) {
-        initAdminAccountPage();
-        return;
-    }
-
-    if (page.includes("admin")) {
-        initAdminPage();
-        return;
-    }
-
-    if (page.includes("dashboard")) {
-        /* Check login before loading dashboard */
+    if (page.includes("signin") || page.includes("signup")) { return; }
+    
+    // Check if user is logged in for protected pages
+    if (page.includes("dashboard") || page.includes("account")) {
         checkLogin();
-        initDashboard();
-        return;
     }
-
-    if (page.includes("account")) {
-        checkLogin();
-        initAccountPage();
-        return;
-    }
-
-    /* Default: homepage (index.html) */
-    checkLogin();
-    initHomepage();
-
+    
+    if (page.includes("dashboard")) { initDashboard(); }
+    else if (page.includes("account")) { initAccountPage(); }
+    else { initHomepage(); }
 });
 
 
@@ -135,13 +104,6 @@ function goToSlide(index, slides, dots) {
 
 }
 
-
-/* ─────────────────────────────────────────────────
-   SECTION 3 — AUTHENTICATION
-   Sign Up, Sign In, Sign Out functions.
-   All communicate with php/auth.php.
-───────────────────────────────────────────────── */
-
 /* ───────────────────────────────────────────────── 
    SECTION 3 — AUTHENTICATION (Supabase)
    ───────────────────────────────────────────────── */
@@ -150,8 +112,8 @@ async function signUp() {
     const email = document.getElementById("username").value.trim(); 
     const password = document.getElementById("password").value.trim();
 
-    if (email === "" || password === "") {
-        alert("Please enter both an email and password.");
+    if (!email.includes("@")) {
+        alert("Please enter a valid email address.");
         return;
     }
 
@@ -172,12 +134,6 @@ async function signIn() {
     const email = document.getElementById("username").value.trim();
     const password = document.getElementById("password").value.trim();
 
-    if (email === "" || password === "") {
-        alert("Please enter your email and password.");
-        return;
-    }
-
-    // FIXED: Changed 'supabase' to 'supabaseClient' to match line 7
     const { data, error } = await supabaseClient.auth.signInWithPassword({
         email: email,
         password: password,
@@ -188,11 +144,16 @@ async function signIn() {
     } else {
         localStorage.setItem("username", data.user.email);
         localStorage.setItem("userId", data.user.id);
-        
         alert("Welcome back!");
         window.location.href = "index.html";
     }
 }
+
+function checkLogin() {
+    let username = localStorage.getItem("username");
+    if (!username) { window.location.href = "signin.html"; }
+}
+/*----------------------------------------------------------------------- */
 
 function logout() {
     supabaseClient.auth.signOut().then(() => {
