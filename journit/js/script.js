@@ -197,7 +197,7 @@ async function loadTrackedPlan() {
 
 async function toggleActivity(checkbox) {
     const activityId = checkbox.getAttribute("data-id");
-    const isDone = checkbox.checked ? 1 : 0;
+    const isDone = checkbox.checked; // This is already true or false
 
     // Update the visual appearance immediately
     const nameSpan = checkbox.parentElement.querySelector(".activity-name");
@@ -206,7 +206,7 @@ async function toggleActivity(checkbox) {
     // 2. Update the 'activities' table in Supabase
     const { error } = await supabaseClient
         .from('activities')
-        .update({ is_done: isDone })
+        .update({ is_done: isDone }) // Database expects bool
         .eq('id', activityId);
 
     if (error) {
@@ -223,7 +223,7 @@ async function stopTracking() {
     // 3. Set 'is_tracked' to 0 for all plans of this user
     const { error } = await supabaseClient
         .from('plans')
-        .update({ is_tracked: 0 })
+        .update({ is_tracked: false })
         .eq('user_id', userId);
 
     if (!error) {
@@ -306,7 +306,7 @@ async function savePlan() {
             { 
                 plan_name: planName, 
                 user_id: userId,
-                is_tracked: 0 
+                is_tracked: false 
             }
         ])
         .select();
@@ -432,13 +432,13 @@ async function trackPlan() {
     // 1. First, untrack any currently tracked plan for this user
     await supabaseClient
         .from('plans')
-        .update({ is_tracked: 0 })
+        .update({ is_tracked: false })
         .eq('user_id', userId);
 
     // 2. Set the current plan to tracked
     const { error } = await supabaseClient
         .from('plans')
-        .update({ is_tracked: 1 })
+        .update({ is_tracked: true })
         .eq('id', currentOpenPlanId);
 
     if (error) {
@@ -536,7 +536,7 @@ async function savePlan() {
     // 1. Create the Plan
     const { data: planData, error: planError } = await supabaseClient
         .from('plans')
-        .insert([{ plan_name: planName, user_id: userId, is_tracked: 0 }])
+        .insert([{ plan_name: planName, user_id: userId, is_tracked: false }])
         .select()
         .single();
 
