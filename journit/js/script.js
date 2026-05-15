@@ -1,42 +1,30 @@
 /* ═══════════════════════════════════════════════════
-   JOURNIT — script.js
-   One JavaScript file for all pages.
-   Sections:
-   1.  Page initialization
-   2.  Hero slideshow
-   3.  Authentication (sign up, sign in, sign out)
-   4.  Homepage — tracking and progress
-   5.  Dashboard — plans grid
-   6.  Dashboard — expanded plan modal
-   7.  Dashboard — delete plan
-   8.  Dashboard — add plan
-   9.  Dashboard — edit plan
-   10. Account page
-   11. Admin pages
-   12. Utility functions
+   JOURNIT — script.js (Supabase Version - Fixed)
 ═══════════════════════════════════════════════════ */
 
 
 /* ─────────────────────────────────────────────────
-   SECTION 1 — PAGE INITIALIZATION
-   Runs when any page finishes loading.
-   Checks which page is open and calls the
-   correct setup function for that page.
+   SECTION 1 — SUPABASE CONFIGURATION
+───────────────────────────────────────────────── */
+
+const SUPABASE_URL = "https://ibgzafnozprlsrhougdt.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImliZ3phZm5venBybHNyaG91Z2R0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2NzM5MDUsImV4cCI6MjA5NDI0OTkwNX0.d7BfVbm4PaP0nNfJQ5wvOtSbV4_2J5aaPQHBrWCY3FA";
+const db = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
+
+
+/* ─────────────────────────────────────────────────
+   SECTION 2 — PAGE INITIALIZATION
 ───────────────────────────────────────────────── */
 
 document.addEventListener("DOMContentLoaded", function() {
 
-    /* document.body.id tells us which page we are on.
-       We set a unique id on each page's <body> tag.
-       Wait — we used class not id on body.
-       So instead we check the page title or URL. */
-
     let page = window.location.pathname;
-    /* window.location.pathname is the current URL path
-       e.g. "/journit/index.html" or "/journit/dashboard.html" */
 
-    if (page.includes("signin") || page.includes("signup")) {
-        /* Auth pages — nothing to initialize */
+    if (page.includes("signin") ||
+        page.includes("signup")) {
         return;
     }
 
@@ -51,7 +39,6 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     if (page.includes("dashboard")) {
-        /* Check login before loading dashboard */
         checkLogin();
         initDashboard();
         return;
@@ -63,7 +50,6 @@ document.addEventListener("DOMContentLoaded", function() {
         return;
     }
 
-    /* Default: homepage (index.html) */
     checkLogin();
     initHomepage();
 
@@ -71,35 +57,27 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
 /* ─────────────────────────────────────────────────
-   SECTION 2 — HERO SLIDESHOW
-   Runs only on the homepage.
-   Moves the "active" class from slide to slide
-   every 4 seconds automatically.
+   SECTION 3 — HERO SLIDESHOW
 ───────────────────────────────────────────────── */
 
-/* currentSlide tracks which slide is visible */
 let currentSlide = 0;
 
 function initSlideshow() {
 
-    /* Get all slide divs and all dot spans */
     let slides = document.querySelectorAll(".slide");
-    let dots = document.querySelectorAll(".dot");
+    let dots   = document.querySelectorAll(".dot");
 
-    /* If no slides found — slideshow not on this page */
     if (slides.length === 0) { return; }
 
-    /* Add click event to each dot */
-    /* When a dot is clicked, jump to that slide */
     dots.forEach(function(dot) {
         dot.addEventListener("click", function() {
-            /* data-index stored on each dot in HTML */
-            let index = parseInt(dot.getAttribute("data-index"));
+            let index = parseInt(
+                dot.getAttribute("data-index")
+            );
             goToSlide(index, slides, dots);
         });
     });
 
-    /* setInterval runs goToNextSlide every 4 seconds */
     setInterval(function() {
         goToNextSlide(slides, dots);
     }, 4000);
@@ -107,150 +85,130 @@ function initSlideshow() {
 }
 
 function goToNextSlide(slides, dots) {
-    /* Move to the next slide */
-    /* If we are on the last slide, wrap back to 0 */
     let next = (currentSlide + 1) % slides.length;
     goToSlide(next, slides, dots);
 }
 
 function goToSlide(index, slides, dots) {
-
-    /* Remove "active" from current slide and dot */
     slides[currentSlide].classList.remove("active");
     dots[currentSlide].classList.remove("active");
-
-    /* Update currentSlide to the new index */
     currentSlide = index;
-
-    /* Add "active" to the new slide and dot */
     slides[currentSlide].classList.add("active");
     dots[currentSlide].classList.add("active");
-
 }
 
 
 /* ─────────────────────────────────────────────────
-   SECTION 3 — AUTHENTICATION
-   Sign Up, Sign In, Sign Out functions.
-   All communicate with php/auth.php.
+   SECTION 4 — AUTHENTICATION
 ───────────────────────────────────────────────── */
 
-function signUp() {
+async function signUp() {
 
-    /* Read values from the input fields */
-    let username = document.getElementById("username").value.trim();
-    let password = document.getElementById("password").value.trim();
+    let username = document.getElementById(
+        "username"
+    ).value.trim();
+    let password = document.getElementById(
+        "password"
+    ).value.trim();
 
-    /* .trim() removes any accidental spaces the user typed */
-
-    /* Validate — do not send empty fields to PHP */
     if (username === "" || password === "") {
         alert("Please enter both a username and password.");
         return;
-        /* return stops the function from continuing */
     }
 
-    /* Send sign up request to PHP */
-    fetch("php/auth.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "signup",
-            username: username,
-            password: password
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
+    let fakeEmail = username + "@journit.app";
 
-        if (data.success) {
-            /* Account created — redirect to sign in */
-            alert("Account created! Please sign in.");
-            window.location.href = "signin.html";
-        } else {
-            /* PHP returned an error message */
-            alert(data.message);
-        }
-
+    let { data, error } = await db.auth.signUp({
+        email:    fakeEmail,
+        password: password
     });
+
+    if (error) {
+        alert("Sign up failed: " + error.message);
+        return;
+    }
+
+    let { error: profileError } = await db
+        .from("profiles")
+        .insert({
+            id:              data.user.id,
+            username:        username,
+            role:            "user",
+            completed_count: 0
+        });
+
+    if (profileError) {
+        alert("Profile creation failed: " +
+              profileError.message);
+        return;
+    }
+
+    await db.from("admin_log").insert({
+        action:  "user_registered",
+        user_id: data.user.id,
+        details: username
+    });
+
+    alert("Account created! Please sign in.");
+    window.location.href = "signin.html";
 
 }
 
 
-function signIn() {
+async function signIn() {
 
-    let username = document.getElementById("username").value.trim();
-    let password = document.getElementById("password").value.trim();
+    let username = document.getElementById(
+        "username"
+    ).value.trim();
+    let password = document.getElementById(
+        "password"
+    ).value.trim();
 
     if (username === "" || password === "") {
         alert("Please enter your username and password.");
         return;
     }
 
-    fetch("php/auth.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "signin",
-            username: username,
-            password: password
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
+    let fakeEmail = username + "@journit.app";
 
-        if (data.success) {
-
-            /* Save user info to localStorage */
-            /* This persists across page navigations */
-            localStorage.setItem("username", data.username);
-            localStorage.setItem("role", data.role);
-            localStorage.setItem("userId", data.userId);
-
-            /* Redirect based on role */
-            if (data.role === "admin") {
-                window.location.href = "admin.html";
-            } else {
-                window.location.href = "index.html";
-            }
-
-        } else {
-            alert(data.message);
-        }
-
+    let { data, error } = await db.auth.signInWithPassword({
+        email:    fakeEmail,
+        password: password
     });
+
+    if (error) {
+        alert("Sign in failed. " +
+              "Check your username and password.");
+        return;
+    }
+
+    let { data: profile } = await db
+        .from("profiles")
+        .select("username, role")
+        .eq("id", data.user.id)
+        .single();
+
+    localStorage.setItem("userId",   data.user.id);
+    localStorage.setItem("username", profile.username);
+    localStorage.setItem("role",     profile.role);
+
+    if (profile.role === "admin") {
+        window.location.href = "admin.html";
+    } else {
+        window.location.href = "index.html";
+    }
 
 }
 
 
-function logout() {
-
-    /* Tell PHP to end the session */
-    fetch("php/auth.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "logout" })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function() {
-        /* Clear localStorage — removes all saved user data */
-        localStorage.clear();
-        /* Redirect to sign in page */
-        window.location.href = "signin.html";
-    });
-
+async function logout() {
+    await db.auth.signOut();
+    localStorage.clear();
+    window.location.href = "signin.html";
 }
 
 
 function checkLogin() {
-    /* If no username in localStorage, user is not logged in */
-    /* Redirect to sign in page immediately */
     let username = localStorage.getItem("username");
     if (!username) {
         window.location.href = "signin.html";
@@ -259,177 +217,149 @@ function checkLogin() {
 
 
 /* ─────────────────────────────────────────────────
-   SECTION 4 — HOMEPAGE
-   Initializes the homepage.
-   Loads tracking data if a plan is being tracked.
-   Runs the slideshow.
+   SECTION 5 — HOMEPAGE
 ───────────────────────────────────────────────── */
 
 function initHomepage() {
-
-    /* Start the hero slideshow */
     initSlideshow();
-
-    /* Load the currently tracked plan if one exists */
     loadTrackedPlan();
-
 }
 
-
 function scrollToPlans() {
-    /* Smoothly scroll down to the plans section */
-    /* The HTML element with id="plans-section" */
     let section = document.getElementById("plans-section");
     if (section) {
-        /* scrollIntoView scrolls the page until
-           the element is visible on screen */
         section.scrollIntoView({ behavior: "smooth" });
     }
 }
 
-
-function loadTrackedPlan() {
+async function loadTrackedPlan() {
 
     let userId = localStorage.getItem("userId");
 
-    fetch("php/itinerary.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "getTracked",
-            userId: userId
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
+    let { data: plans } = await db
+        .from("plans")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("is_tracked", true);
 
-        if (data.success && data.plan) {
-            /* A plan is being tracked — show active state */
-            showActivePlanState(data.plan);
-        } else {
-            /* No plan tracked — show empty state */
-            showNoPlanState();
-        }
+    if (!plans || plans.length === 0) {
+        showNoPlanState();
+        return;
+    }
 
-    });
+    let plan = await getFullPlan(plans[0].id);
+    showActivePlanState(plan);
 
 }
-
 
 function showNoPlanState() {
-    /* Show the empty state, hide the active state */
     document.getElementById("no-plan-state")
             .classList.remove("hidden");
     document.getElementById("active-plan-state")
             .classList.add("hidden");
 }
 
+async function showActivePlanState(plan) {
 
-function showActivePlanState(plan) {
-
-    /* Hide the empty state, show the active state */
     document.getElementById("no-plan-state")
             .classList.add("hidden");
     document.getElementById("active-plan-state")
             .classList.remove("hidden");
 
-    /* Fill in the plan name */
     document.getElementById("tracking-plan-name")
             .textContent = plan.plan_name;
 
-    /* Fill in days count and budget */
-    document.getElementById("tracking-days-count")
-            .textContent = plan.days.length + " Days";
-
-    /* Calculate total budget across all days */
     let totalBudget = 0;
     plan.days.forEach(function(day) {
-        totalBudget += parseFloat(day.budget);
+        totalBudget += parseFloat(day.budget || 0);
     });
+
+    document.getElementById("tracking-days-count")
+            .textContent = plan.days.length + " Days";
     document.getElementById("tracking-budget")
             .textContent = "₱" + totalBudget.toLocaleString();
-    /* .toLocaleString() formats numbers with commas:
-       1500 becomes "1,500" automatically */
 
-    /* Build the day boxes with checkboxes */
     buildTrackingDays(plan.days);
-
-    /* Update the progress tracker */
     updateProgress(plan.days);
 
 }
 
-
 function buildTrackingDays(days) {
 
     let container = document.getElementById("tracking-days");
-    /* Clear any previous content */
     container.innerHTML = "";
 
     days.forEach(function(day) {
 
-        /* Format the date from "2026-05-07" to "Thu, May 7" */
-        let dateObj = new Date(day.day_date);
+        let dateObj   = new Date(day.day_date);
         let formatted = dateObj.toLocaleDateString("en-US", {
             weekday: "short",
-            month: "short",
-            day: "numeric"
+            month:   "short",
+            day:     "numeric"
         });
 
-        /* Build the HTML for this day box */
-        /* We use innerHTML here because we are building
-           a whole HTML structure dynamically */
-        let dayHTML = "<div class='day-box'>";
-        dayHTML += "<div class='day-header-row'>";
-        dayHTML += "<span class='day-date-label'>" + formatted + "</span>";
-        dayHTML += "<span class='day-budget-badge'>₱" +
-                   parseFloat(day.budget).toLocaleString() + "</span>";
-        dayHTML += "</div>";
+        let dayDiv = document.createElement("div");
+        dayDiv.className = "day-box";
 
-        /* Add each activity with a checkbox */
+        let headerRow = document.createElement("div");
+        headerRow.className = "day-header-row";
+        headerRow.innerHTML =
+            "<span class='day-date-label'>" +
+            formatted + "</span>" +
+            "<span class='day-budget-badge'>₱" +
+            parseFloat(day.budget || 0)
+            .toLocaleString() + "</span>";
+        dayDiv.appendChild(headerRow);
+
         day.activities.forEach(function(activity) {
 
-            let checked = activity.is_done == 1 ? "checked" : "";
-            let doneClass = activity.is_done == 1 ? "completed" : "";
+            let actRow = document.createElement("div");
+            actRow.className = "activity-row";
 
-            dayHTML += "<div class='activity-row'>";
-            dayHTML += "<input type='checkbox' class='activity-checkbox' " +
-                       "data-id='" + activity.id + "' " +
-                       checked +
-                       " onchange='toggleActivity(this)'>";
-            dayHTML += "<div class='activity-details'>";
-            dayHTML += "<span class='activity-name " + doneClass + "'>" +
-                       activity.activity_name + "</span>";
-            dayHTML += "<div class='activity-meta'>";
-            dayHTML += "<span class='activity-time'>" +
-                       activity.activity_time + "</span>";
-            dayHTML += "<span class='activity-location'>" +
-                       activity.location + "</span>";
-            dayHTML += "</div>";
-            dayHTML += "</div>";
-            dayHTML += "</div>";
+            let checkbox = document.createElement("input");
+            checkbox.type      = "checkbox";
+            checkbox.className = "activity-checkbox";
+            checkbox.setAttribute("data-id", activity.id);
+            checkbox.checked   = activity.is_done;
+            checkbox.addEventListener("change", function() {
+                toggleActivity(this);
+            });
+
+            let details = document.createElement("div");
+            details.className = "activity-details";
+
+            let name = document.createElement("span");
+            name.className = "activity-name" +
+                             (activity.is_done ? " completed" : "");
+            name.textContent = activity.activity_name;
+
+            let meta = document.createElement("div");
+            meta.className = "activity-meta";
+            meta.innerHTML =
+                "<span class='activity-time'>" +
+                (activity.activity_time || "") + "</span>" +
+                "<span class='activity-location'>" +
+                (activity.location || "") + "</span>";
+
+            details.appendChild(name);
+            details.appendChild(meta);
+            actRow.appendChild(checkbox);
+            actRow.appendChild(details);
+            dayDiv.appendChild(actRow);
 
         });
 
-        dayHTML += "</div>";
-
-        /* Insert the built HTML into the container */
-        container.innerHTML += dayHTML;
+        container.appendChild(dayDiv);
 
     });
 
 }
 
+async function toggleActivity(checkbox) {
 
-function toggleActivity(checkbox) {
-
-    /* Read which activity was checked/unchecked */
     let activityId = checkbox.getAttribute("data-id");
-    let isDone = checkbox.checked ? 1 : 0;
+    let isDone     = checkbox.checked;
 
-    /* Update the activity name appearance */
     let nameSpan = checkbox.parentElement
                            .querySelector(".activity-name");
     if (isDone) {
@@ -438,78 +368,55 @@ function toggleActivity(checkbox) {
         nameSpan.classList.remove("completed");
     }
 
-    /* Send update to PHP — saves to database */
-    fetch("php/itinerary.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "toggleActivity",
-            activityId: activityId,
-            isDone: isDone
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function() {
-        /* Reload the tracked plan to update progress */
-        loadTrackedPlan();
-    });
+    await db
+        .from("activities")
+        .update({ is_done: isDone })
+        .eq("id", activityId);
+
+    loadTrackedPlan();
 
 }
-
 
 function updateProgress(days) {
 
     let totalActivities = 0;
-    let doneActivities = 0;
-    let totalBudget = 0;
-    let spentBudget = 0;
+    let doneActivities  = 0;
+    let totalBudget     = 0;
+    let spentBudget     = 0;
 
     days.forEach(function(day) {
 
-        totalBudget += parseFloat(day.budget);
-
-        /* Check if ALL activities in this day are done */
-        let dayDone = true;
+        totalBudget += parseFloat(day.budget || 0);
+        let dayDone  = true;
 
         day.activities.forEach(function(activity) {
             totalActivities++;
-            if (activity.is_done == 1) {
+            if (activity.is_done) {
                 doneActivities++;
             } else {
                 dayDone = false;
             }
         });
 
-        /* If all activities in the day are done,
-           count that day's budget as spent */
         if (dayDone && day.activities.length > 0) {
-            spentBudget += parseFloat(day.budget);
+            spentBudget += parseFloat(day.budget || 0);
         }
 
     });
 
-    /* Calculate percentage */
     let percent = 0;
     if (totalActivities > 0) {
         percent = Math.round(
             (doneActivities / totalActivities) * 100
         );
-        /* Math.round rounds to the nearest whole number */
     }
 
-    /* Update the percentage text */
     document.getElementById("progress-percent")
             .textContent = percent + "%";
-
-    /* Update activities counter */
     document.getElementById("activities-done")
             .textContent = doneActivities;
     document.getElementById("activities-total")
             .textContent = totalActivities;
-
-    /* Update budget display */
     document.getElementById("budget-spent")
             .textContent = "₱" + spentBudget.toLocaleString();
     document.getElementById("budget-total")
@@ -517,138 +424,112 @@ function updateProgress(days) {
 
 }
 
-
-function stopTracking() {
-
-    let userId = localStorage.getItem("userId");
-
-    fetch("php/itinerary.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "stopTracking",
-            userId: userId
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
-        if (data.success) {
-            /* Update completed count in users table */
-            updateCompletedCount();
-            /* Return homepage to empty state */
-            showNoPlanState();
-        }
-    });
-
-}
-
-
-function updateCompletedCount() {
+async function stopTracking() {
 
     let userId = localStorage.getItem("userId");
 
-    fetch("php/itinerary.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "incrementCompleted",
-            userId: userId
+    await db
+        .from("plans")
+        .update({ is_tracked: false })
+        .eq("user_id", userId);
+
+    let { data: profile } = await db
+        .from("profiles")
+        .select("completed_count")
+        .eq("id", userId)
+        .single();
+
+    await db
+        .from("profiles")
+        .update({
+            completed_count: (profile.completed_count || 0) + 1
         })
-    });
+        .eq("id", userId);
+
+    showNoPlanState();
 
 }
 
 
 /* ─────────────────────────────────────────────────
-   SECTION 5 — DASHBOARD — PLANS GRID
-   Loads all plans for the current user and
-   builds the plan cards in the grid.
+   SECTION 6 — DASHBOARD — PLANS GRID
 ───────────────────────────────────────────────── */
 
 function initDashboard() {
-
-    /* Fill the header username if element exists */
     loadAllPlans();
-
 }
 
-
-function loadAllPlans() {
+async function loadAllPlans() {
 
     let userId = localStorage.getItem("userId");
 
-    fetch("php/itinerary.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "getAll",
-            userId: userId
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
+    let { data: plans, error } = await db
+        .from("plans")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
 
-        let grid = document.getElementById("plans-grid");
-        /* Clear previous cards */
-        grid.innerHTML = "";
+    let grid = document.getElementById("plans-grid");
+    grid.innerHTML = "";
 
-        if (!data.success || data.plans.length === 0) {
-            /* No plans yet — grid stays empty */
-            return;
-        }
+    if (!plans || plans.length === 0) { return; }
 
-        /* Build one card per plan */
-        data.plans.forEach(function(plan) {
-            grid.innerHTML += buildPlanCard(plan);
-        });
+    for (let plan of plans) {
 
-    });
+        let { data: days } = await db
+            .from("days")
+            .select("budget")
+            .eq("plan_id", plan.id);
+
+        plan.days_count   = days ? days.length : 0;
+        plan.total_budget = days
+            ? days.reduce(function(sum, d) {
+                return sum + parseFloat(d.budget || 0);
+              }, 0)
+            : 0;
+
+        /* Use createElement instead of innerHTML+= */
+        /* This prevents wiping user-typed data */
+        let cardDiv = document.createElement("div");
+        cardDiv.innerHTML = buildPlanCard(plan);
+        grid.appendChild(cardDiv.firstChild);
+
+    }
 
 }
 
-
 function buildPlanCard(plan) {
 
-    /* Check if this plan is currently being tracked */
     let trackingBadge = "";
-    if (plan.is_tracked == 1) {
+    if (plan.is_tracked) {
         trackingBadge =
             "<span class='card-tracking-badge'>" +
-            "● Currently Tracking</span>";
+            "&#9679; Currently Tracking</span>";
     }
 
-    /* Build the card HTML */
-    /* data-id stores plan id for when card is clicked */
-    let card = "<div class='plan-card' " +
-               "data-id='" + plan.id + "' " +
-               "data-name='" + plan.plan_name + "' " +
-               "onclick='openPlan(this)'>";
+    let card  = "<div class='plan-card' ";
+    card     += "data-id='" + plan.id + "' ";
+    card     += "data-name='" +
+                plan.plan_name.replace(/'/g, "&#39;") + "' ";
+    card     += "onclick='openPlan(this)'>";
 
-    /* Delete button — shown on hover via CSS */
-    card += "<button class='card-delete-btn' " +
-            "onclick='openDeleteModal(event, " +
-            plan.id + ", \"" + plan.plan_name + "\")'>";
-    card += "<img src='images/warning-icon.png' " +
-            "class='card-delete-icon' alt='Delete'>";
+    /* Delete button — top right, shown on hover */
+    card += "<button class='card-delete-btn' ";
+    card += "onclick='openDeleteModal(event, " +
+            plan.id + ", " +
+            JSON.stringify(plan.plan_name) + ")'>";
+    card += "<img src='images/warning-icon.png' ";
+    card += "class='card-delete-icon' alt='Delete'>";
     card += "</button>";
 
-    /* Plan name */
     card += "<p class='plan-card-name'>" +
             plan.plan_name + "</p>";
-
-    /* Days and budget meta row */
     card += "<div class='plan-card-meta'>";
     card += "<span class='plan-card-meta-item'>" +
             plan.days_count + " Days</span>";
-    card += "<span class='plan-card-meta-item'>₱" +
-            parseFloat(plan.total_budget)
-            .toLocaleString() + "</span>";
+    card += "<span class='plan-card-meta-item'>&#8369;" +
+            plan.total_budget.toLocaleString() + "</span>";
     card += "</div>";
-
     card += trackingBadge;
     card += "</div>";
 
@@ -658,82 +539,82 @@ function buildPlanCard(plan) {
 
 
 /* ─────────────────────────────────────────────────
-   SECTION 6 — DASHBOARD — EXPANDED PLAN MODAL
-   Opens when a plan card is clicked.
-   Shows full plan details with sticky header.
+   SECTION 7 — EXPANDED PLAN MODAL
 ───────────────────────────────────────────────── */
 
-/* Store the currently open plan id */
-/* Used by track and edit functions */
 let currentOpenPlanId = null;
 
+/* Helper: gets full plan with days and activities */
+async function getFullPlan(planId) {
 
-function openPlan(cardElement) {
+    let { data: plan } = await db
+        .from("plans")
+        .select("*")
+        .eq("id", planId)
+        .single();
 
-    /* Read plan id from the clicked card element */
-    let planId = cardElement.getAttribute("data-id");
-    currentOpenPlanId = planId;
+    let { data: days } = await db
+        .from("days")
+        .select("*")
+        .eq("plan_id", planId)
+        .order("day_date", { ascending: true });
 
-    let userId = localStorage.getItem("userId");
+    for (let day of (days || [])) {
+        let { data: activities } = await db
+            .from("activities")
+            .select("*")
+            .eq("day_id", day.id)
+            .order("id", { ascending: true });
+        day.activities = activities || [];
+    }
 
-    /* Fetch full plan data including all days and activities */
-    fetch("php/itinerary.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "getPlan",
-            planId: planId,
-            userId: userId
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
-
-        if (data.success) {
-            populateExpandedModal(data.plan);
-            /* Show the modal */
-            document.getElementById("expanded-plan-modal")
-                    .classList.remove("hidden");
-        }
-
-    });
+    plan.days = days || [];
+    return plan;
 
 }
 
+async function openPlan(cardElement) {
+
+    let planId        = cardElement.getAttribute("data-id");
+    currentOpenPlanId = planId;
+
+    let plan = await getFullPlan(planId);
+    populateExpandedModal(plan);
+
+    document.getElementById("expanded-plan-modal")
+            .classList.remove("hidden");
+
+}
 
 function populateExpandedModal(plan) {
 
-    /* Fill plan name */
     document.getElementById("expanded-plan-name")
             .textContent = plan.plan_name;
 
-    /* Fill days count and total budget */
     let totalBudget = 0;
     plan.days.forEach(function(day) {
-        totalBudget += parseFloat(day.budget);
+        totalBudget += parseFloat(day.budget || 0);
     });
 
     document.getElementById("expanded-days-count")
             .textContent = plan.days.length + " Days";
     document.getElementById("expanded-budget")
-            .textContent = "₱" + totalBudget.toLocaleString();
+            .textContent = "&#8369;" +
+                           totalBudget.toLocaleString();
 
-    /* Show or hide the "Currently Tracking" badge */
-    let badge = document.getElementById(
+    let badge    = document.getElementById(
         "currently-tracking-badge"
     );
-    if (plan.is_tracked == 1) {
+    let trackBtn = document.getElementById("track-btn");
+
+    if (plan.is_tracked) {
         badge.classList.remove("hidden");
-        /* Disable track button if already tracking */
-        document.getElementById("track-btn").disabled = true;
+        trackBtn.disabled = true;
     } else {
         badge.classList.add("hidden");
-        document.getElementById("track-btn").disabled = false;
+        trackBtn.disabled = false;
     }
 
-    /* Build day boxes with activities and checkboxes */
     let container = document.getElementById(
         "expanded-days-content"
     );
@@ -741,56 +622,69 @@ function populateExpandedModal(plan) {
 
     plan.days.forEach(function(day) {
 
-        let dateObj = new Date(day.day_date);
+        let dateObj   = new Date(day.day_date);
         let formatted = dateObj.toLocaleDateString("en-US", {
             weekday: "short",
-            month: "short",
-            day: "numeric"
+            month:   "short",
+            day:     "numeric"
         });
 
-        let dayHTML = "<div class='day-box'>";
-        dayHTML += "<div class='day-header-row'>";
-        dayHTML += "<span class='day-date-label'>" +
-                   formatted + "</span>";
-        dayHTML += "<span class='day-budget-badge'>₱" +
-                   parseFloat(day.budget)
-                   .toLocaleString() + "</span>";
-        dayHTML += "</div>";
+        let dayDiv       = document.createElement("div");
+        dayDiv.className = "day-box";
+
+        let headerRow       = document.createElement("div");
+        headerRow.className = "day-header-row";
+        headerRow.innerHTML =
+            "<span class='day-date-label'>" +
+            formatted + "</span>" +
+            "<span class='day-budget-badge'>&#8369;" +
+            parseFloat(day.budget || 0)
+            .toLocaleString() + "</span>";
+        dayDiv.appendChild(headerRow);
 
         day.activities.forEach(function(activity) {
 
-            let checked = activity.is_done == 1 ? "checked" : "";
-            let doneClass = activity.is_done == 1 ?
-                            "completed" : "";
+            let actRow       = document.createElement("div");
+            actRow.className = "activity-row";
 
-            dayHTML += "<div class='activity-row'>";
-            dayHTML += "<input type='checkbox' " +
-                       "class='activity-checkbox' " +
-                       "data-id='" + activity.id + "' " +
-                       checked +
-                       " onchange='toggleActivity(this)'>";
-            dayHTML += "<div class='activity-details'>";
-            dayHTML += "<span class='activity-name " +
-                       doneClass + "'>" +
-                       activity.activity_name + "</span>";
-            dayHTML += "<div class='activity-meta'>";
-            dayHTML += "<span class='activity-time'>" +
-                       activity.activity_time + "</span>";
-            dayHTML += "<span class='activity-location'>" +
-                       activity.location + "</span>";
-            dayHTML += "</div>";
-            dayHTML += "</div>";
-            dayHTML += "</div>";
+            let cb        = document.createElement("input");
+            cb.type       = "checkbox";
+            cb.className  = "activity-checkbox";
+            cb.setAttribute("data-id", activity.id);
+            cb.checked    = activity.is_done;
+            cb.addEventListener("change", function() {
+                toggleActivity(this);
+            });
+
+            let details       = document.createElement("div");
+            details.className = "activity-details";
+
+            let name       = document.createElement("span");
+            name.className = "activity-name" +
+                (activity.is_done ? " completed" : "");
+            name.textContent = activity.activity_name;
+
+            let meta       = document.createElement("div");
+            meta.className = "activity-meta";
+            meta.innerHTML =
+                "<span class='activity-time'>" +
+                (activity.activity_time || "") + "</span>" +
+                "<span class='activity-location'>" +
+                (activity.location || "") + "</span>";
+
+            details.appendChild(name);
+            details.appendChild(meta);
+            actRow.appendChild(cb);
+            actRow.appendChild(details);
+            dayDiv.appendChild(actRow);
 
         });
 
-        dayHTML += "</div>";
-        container.innerHTML += dayHTML;
+        container.appendChild(dayDiv);
 
     });
 
 }
-
 
 function closeExpandedModal() {
     document.getElementById("expanded-plan-modal")
@@ -798,74 +692,51 @@ function closeExpandedModal() {
     currentOpenPlanId = null;
 }
 
-
-function trackPlan() {
+async function trackPlan() {
 
     let userId = localStorage.getItem("userId");
 
-    fetch("php/itinerary.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "trackPlan",
-            planId: currentOpenPlanId,
-            userId: userId
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
+    await db
+        .from("plans")
+        .update({ is_tracked: false })
+        .eq("user_id", userId);
 
-        if (data.success) {
+    await db
+        .from("plans")
+        .update({ is_tracked: true })
+        .eq("id", currentOpenPlanId);
 
-            /* Show the currently tracking badge */
-            document.getElementById("currently-tracking-badge")
-                    .classList.remove("hidden");
+    document.getElementById("currently-tracking-badge")
+            .classList.remove("hidden");
+    document.getElementById("track-btn").disabled = true;
 
-            /* Disable track button to prevent double-click */
-            document.getElementById("track-btn").disabled = true;
-
-            /* Refresh plan cards to show tracking badge on card */
-            loadAllPlans();
-
-            alert("Plan is now being tracked!");
-
-        }
-
-    });
+    loadAllPlans();
+    alert("Plan is now being tracked!");
 
 }
 
 
 /* ─────────────────────────────────────────────────
-   SECTION 7 — DASHBOARD — DELETE PLAN
+   SECTION 8 — DELETE PLAN
 ───────────────────────────────────────────────── */
 
-/* Store which plan is pending deletion */
 let planIdToDelete = null;
-
 
 function openDeleteModal(event, planId, planName) {
 
-    /* event.stopPropagation() prevents the click from
-       also triggering openPlan() on the card below */
     event.stopPropagation();
-
     planIdToDelete = planId;
 
-    /* Update the confirmation message with plan name */
     document.getElementById("delete-modal-message")
-            .textContent = "Are you sure you want to delete \"" +
-                           planName + "\"? " +
-                           "This action cannot be undone.";
+            .textContent =
+            "Are you sure you want to delete \"" +
+            planName + "\"? " +
+            "This action cannot be undone.";
 
-    /* Show the delete modal */
     document.getElementById("delete-modal")
             .classList.remove("hidden");
 
 }
-
 
 function closeDeleteModal() {
     document.getElementById("delete-modal")
@@ -873,66 +744,64 @@ function closeDeleteModal() {
     planIdToDelete = null;
 }
 
-
-function confirmDelete() {
+async function confirmDelete() {
 
     if (!planIdToDelete) { return; }
 
-    fetch("php/itinerary.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "deletePlan",
-            planId: planIdToDelete
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
+    let { data: days } = await db
+        .from("days")
+        .select("id")
+        .eq("plan_id", planIdToDelete);
 
-        if (data.success) {
-            closeDeleteModal();
-            /* Reload all plan cards to reflect deletion */
-            loadAllPlans();
-        }
+    if (days && days.length > 0) {
+        let dayIds = days.map(function(d) { return d.id; });
+        await db
+            .from("activities")
+            .delete()
+            .in("day_id", dayIds);
+    }
 
-    });
+    await db
+        .from("days")
+        .delete()
+        .eq("plan_id", planIdToDelete);
+
+    await db
+        .from("plans")
+        .delete()
+        .eq("id", planIdToDelete);
+
+    closeDeleteModal();
+    loadAllPlans();
 
 }
 
 
 /* ─────────────────────────────────────────────────
-   SECTION 8 — DASHBOARD — ADD PLAN
-   Two-step process:
-   Step 1 — user names the journey
-   Step 2 — user builds days and activities
+   SECTION 9 — ADD PLAN
+   KEY FIX: uses appendChild instead of innerHTML+=
+   so existing typed data is never destroyed
 ───────────────────────────────────────────────── */
 
-/* Store the new plan name between steps */
 let newPlanName = "";
 
-
 function openAddPlanStep1() {
-    /* Clear previous input if any */
-    document.getElementById("new-plan-name-input").value = "";
-    /* Show step 1 modal */
+    document.getElementById(
+        "new-plan-name-input"
+    ).value = "";
     document.getElementById("add-plan-modal-1")
             .classList.remove("hidden");
 }
-
 
 function closeAddPlanModal() {
     document.getElementById("add-plan-modal-1")
             .classList.add("hidden");
     document.getElementById("add-plan-modal-2")
             .classList.add("hidden");
-    /* Clear the days container for next time */
     document.getElementById("add-days-container")
             .innerHTML = "";
     newPlanName = "";
 }
-
 
 function proceedToStep2() {
 
@@ -940,7 +809,6 @@ function proceedToStep2() {
         "new-plan-name-input"
     );
 
-    /* Validate — name cannot be empty */
     if (nameInput.value.trim() === "") {
         alert("Please enter a name for your journey.");
         return;
@@ -948,23 +816,19 @@ function proceedToStep2() {
 
     newPlanName = nameInput.value.trim();
 
-    /* Hide step 1, show step 2 */
     document.getElementById("add-plan-modal-1")
             .classList.add("hidden");
     document.getElementById("add-plan-modal-2")
             .classList.remove("hidden");
-
-    /* Show plan name at top of step 2 */
     document.getElementById("add-plan-name-display")
             .value = newPlanName;
 
-    /* Build the first day block automatically */
+    /* Clear container then add first day */
     document.getElementById("add-days-container")
             .innerHTML = "";
     addAnotherDay("add");
 
 }
-
 
 function backToStep1() {
     document.getElementById("add-plan-modal-2")
@@ -974,225 +838,275 @@ function backToStep1() {
 }
 
 
+/* ── THE CORE FIX ─────────────────────────────────
+   Old code used innerHTML += which destroyed
+   previously typed values because it rebuilt
+   the entire container HTML from scratch.
+
+   New code uses createElement + appendChild which
+   adds new elements WITHOUT touching existing ones.
+   User typed data stays intact.
+────────────────────────────────────────────────── */
 function addAnotherDay(mode) {
 
-    /* mode is either "add" (new plan) or "edit" */
-    let containerId = mode === "add" ?
-                      "add-days-container" :
-                      "edit-days-container";
+    let containerId = mode === "add"
+        ? "add-days-container"
+        : "edit-days-container";
     let container = document.getElementById(containerId);
 
-    /* Count existing day blocks to determine next day number */
-    let existingDays = container.querySelectorAll(".day-form-block");
-    let dayNumber = existingDays.length + 1;
-
-    /* Calculate the next date automatically */
-    /* Find the last date input in the container */
+    /* Find the last date input to auto-fill next date */
     let dateInputs = container.querySelectorAll(".date-input");
-    let nextDate = "";
+    let nextDate   = "";
 
     if (dateInputs.length > 0) {
-        /* Get the last date value */
         let lastDate = dateInputs[dateInputs.length - 1].value;
         if (lastDate !== "") {
-            /* Add 1 day to the last date */
             let dateObj = new Date(lastDate);
             dateObj.setDate(dateObj.getDate() + 1);
-            /* Format back to YYYY-MM-DD for the input */
             nextDate = dateObj.toISOString().split("T")[0];
-            /* .toISOString() gives "2026-05-08T00:00:00.000Z"
-               .split("T")[0] takes just "2026-05-08" */
         }
     }
 
-    /* Build the day block HTML */
-    let dayBlock = "<div class='day-form-block'>";
-    dayBlock += "<div class='day-form-header'>";
-    dayBlock += "<div>";
-    dayBlock += "<p class='day-form-date-label'>Date</p>";
-    dayBlock += "<input type='date' class='date-input' " +
-                "value='" + nextDate + "'>";
-    dayBlock += "</div>";
-    dayBlock += "<div>";
-    dayBlock += "<p class='day-form-budget-label'>" +
-                "Total Budget</p>";
-    dayBlock += "<input type='number' class='budget-input' " +
-                "placeholder='0'>";
-    dayBlock += "</div>";
-    dayBlock += "</div>";
+    /* Build the day block using createElement */
+    /* This never touches existing DOM elements */
+    let dayBlock       = document.createElement("div");
+    dayBlock.className = "day-form-block";
 
-    /* Activities label */
-    dayBlock += "<p class='activities-label'>Activities</p>";
+    /* DAY HEADER: date picker + budget side by side */
+    let headerDiv       = document.createElement("div");
+    headerDiv.className = "day-form-header";
 
-    /* One default empty activity row */
-    dayBlock += buildActivityFormRow();
+    /* Date group */
+    let dateGroup       = document.createElement("div");
+    let dateLbl         = document.createElement("p");
+    dateLbl.className   = "day-form-date-label";
+    dateLbl.textContent = "Date";
 
-    /* Second default empty activity row */
-    dayBlock += buildActivityFormRow();
+    let dateInput       = document.createElement("input");
+    dateInput.type      = "date";
+    dateInput.className = "date-input";
+    dateInput.value     = nextDate;
 
-    /* Add Activity button for this day */
-    dayBlock += "<button class='add-activity-btn' " +
-                "onclick='addActivityRow(this)'>" +
-                "+ Add Activity</button>";
+    dateGroup.appendChild(dateLbl);
+    dateGroup.appendChild(dateInput);
 
-    dayBlock += "</div>";
+    /* Budget group */
+    let budgetGroup       = document.createElement("div");
+    let budgetLbl         = document.createElement("p");
+    budgetLbl.className   = "day-form-budget-label";
+    budgetLbl.textContent = "Total Budget";
 
-    container.innerHTML += dayBlock;
+    let budgetInput         = document.createElement("input");
+    budgetInput.type        = "number";
+    budgetInput.className   = "budget-input";
+    budgetInput.placeholder = "0";
+    budgetInput.value       = "0";
 
-    /* Update the day count display */
+    budgetGroup.appendChild(budgetLbl);
+    budgetGroup.appendChild(budgetInput);
+
+    headerDiv.appendChild(dateGroup);
+    headerDiv.appendChild(budgetGroup);
+    dayBlock.appendChild(headerDiv);
+
+    /* DELETE DAY BUTTON */
+    let deleteDayBtn       = document.createElement("button");
+    deleteDayBtn.className = "delete-day-btn";
+    deleteDayBtn.textContent = "✕ Remove this day";
+    deleteDayBtn.type      = "button";
+    deleteDayBtn.onclick   = function() {
+        /* Remove the entire day block */
+        container.removeChild(dayBlock);
+        updateDayCount(mode);
+        updateBudgetTotal(mode);
+    };
+    dayBlock.appendChild(deleteDayBtn);
+
+    /* ACTIVITIES LABEL */
+    let activitiesLbl       = document.createElement("p");
+    activitiesLbl.className = "activities-label";
+    activitiesLbl.textContent = "Activities";
+    dayBlock.appendChild(activitiesLbl);
+
+    /* ACTIVITIES CONTAINER inside this day block */
+    let activitiesContainer       = document.createElement("div");
+    activitiesContainer.className = "activities-container";
+    dayBlock.appendChild(activitiesContainer);
+
+    /* Two default empty activity rows */
+    addActivityRowToContainer(activitiesContainer);
+    addActivityRowToContainer(activitiesContainer);
+
+    /* ADD ACTIVITY BUTTON for this day */
+    let addActBtn       = document.createElement("button");
+    addActBtn.className = "add-activity-btn";
+    addActBtn.type      = "button";
+    addActBtn.textContent = "+ Add Activity";
+    addActBtn.onclick   = function() {
+        addActivityRowToContainer(activitiesContainer);
+    };
+    dayBlock.appendChild(addActBtn);
+
+    /* Append the whole day block to the container */
+    /* appendChild NEVER touches existing elements */
+    container.appendChild(dayBlock);
+
     updateDayCount(mode);
 
-}
-
-
-function buildActivityFormRow() {
-
-    let row = "<div class='activity-form-block'>";
-    row += "<input type='text' class='activity-desc-input' " +
-           "placeholder='Activity description'>";
-    row += "<div class='activity-time-location-row'>";
-    row += "<input type='text' class='time-input' " +
-           "placeholder='Time'>";
-    row += "<input type='text' class='location-input' " +
-           "placeholder='Location'>";
-    row += "</div>";
-    row += "</div>";
-
-    return row;
+    /* Update budget total when budget changes */
+    budgetInput.addEventListener("input", function() {
+        updateBudgetTotal(mode);
+    });
 
 }
 
 
-function addActivityRow(button) {
+/* ── ACTIVITY ROW ─────────────────────────────────
+   Creates one activity row using createElement.
+   Takes an activitiesContainer as parameter
+   so it knows exactly where to append.
+   Includes a delete button for each activity.
+────────────────────────────────────────────────── */
+function addActivityRowToContainer(
+    activitiesContainer,
+    prefillName,
+    prefillTime,
+    prefillLocation
+) {
 
-    /* Find the day block this button belongs to */
-    /* parentElement goes up one level in the HTML tree */
-    let dayBlock = button.parentElement;
+    let actBlock       = document.createElement("div");
+    actBlock.className = "activity-form-block";
 
-    /* Build a new activity row */
-    let newRow = buildActivityFormRow();
+    /* DELETE ACTIVITY BUTTON: top right of each activity */
+    let deleteActBtn       = document.createElement("button");
+    deleteActBtn.className = "delete-activity-btn";
+    deleteActBtn.type      = "button";
+    deleteActBtn.textContent = "✕";
+    deleteActBtn.title     = "Remove this activity";
+    deleteActBtn.onclick   = function() {
+        activitiesContainer.removeChild(actBlock);
+    };
+    actBlock.appendChild(deleteActBtn);
 
-    /* Insert before the Add Activity button */
-    /* insertAdjacentHTML places HTML relative to an element */
-    button.insertAdjacentHTML("beforebegin", newRow);
+    /* ACTIVITY DESCRIPTION INPUT */
+    let descInput         = document.createElement("input");
+    descInput.type        = "text";
+    descInput.className   = "activity-desc-input";
+    descInput.placeholder = "Activity description";
+    descInput.value       = prefillName || "";
+    actBlock.appendChild(descInput);
+
+    /* TIME AND LOCATION ROW */
+    let timeLocRow       = document.createElement("div");
+    timeLocRow.className = "activity-time-location-row";
+
+    let timeInput         = document.createElement("input");
+    timeInput.type        = "text";
+    timeInput.className   = "time-input";
+    timeInput.placeholder = "Time";
+    timeInput.value       = prefillTime || "";
+
+    let locInput         = document.createElement("input");
+    locInput.type        = "text";
+    locInput.className   = "location-input";
+    locInput.placeholder = "Location";
+    locInput.value       = prefillLocation || "";
+
+    timeLocRow.appendChild(timeInput);
+    timeLocRow.appendChild(locInput);
+    actBlock.appendChild(timeLocRow);
+
+    activitiesContainer.appendChild(actBlock);
 
 }
 
 
 function updateDayCount(mode) {
 
-    let containerId = mode === "add" ?
-                      "add-days-container" :
-                      "edit-days-container";
-    let countId = mode === "add" ?
-                  "add-days-count" :
-                  "edit-days-count";
+    let containerId = mode === "add"
+        ? "add-days-container"
+        : "edit-days-container";
+    let countId = mode === "add"
+        ? "add-days-count"
+        : "edit-days-count";
 
     let count = document.getElementById(containerId)
-                        .querySelectorAll(".day-form-block")
-                        .length;
+        .querySelectorAll(".day-form-block").length;
 
-    document.getElementById(countId).textContent = count;
+    let el = document.getElementById(countId);
+    if (el) { el.textContent = count; }
 
 }
 
 
-function savePlan() {
+function updateBudgetTotal(mode) {
 
-    let userId = localStorage.getItem("userId");
-    let planName = document.getElementById(
-        "add-plan-name-display"
-    ).value.trim();
+    let containerId = mode === "add"
+        ? "add-days-container"
+        : "edit-days-container";
+    let totalId = mode === "add"
+        ? "add-budget-total"
+        : "edit-budget-total";
 
-    if (planName === "") {
-        alert("Please enter a journey name.");
-        return;
-    }
+    let inputs = document.getElementById(containerId)
+        .querySelectorAll(".budget-input");
 
-    /* Collect all day data from the form */
-    let days = collectDayData("add");
-
-    if (days.length === 0) {
-        alert("Please add at least one day.");
-        return;
-    }
-
-    /* Send to PHP to save in database */
-    fetch("php/itinerary.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "createPlan",
-            userId: userId,
-            planName: planName,
-            days: days
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
-
-        if (data.success) {
-            closeAddPlanModal();
-            /* Reload cards to show the new plan */
-            loadAllPlans();
-        } else {
-            alert(data.message);
-        }
-
+    let total = 0;
+    inputs.forEach(function(inp) {
+        total += parseFloat(inp.value || 0);
     });
+
+    let el = document.getElementById(totalId);
+    if (el) { el.textContent = total.toLocaleString(); }
 
 }
 
 
 function collectDayData(mode) {
 
-    let containerId = mode === "add" ?
-                      "add-days-container" :
-                      "edit-days-container";
-    let container = document.getElementById(containerId);
-    let dayBlocks = container.querySelectorAll(".day-form-block");
+    let containerId = mode === "add"
+        ? "add-days-container"
+        : "edit-days-container";
 
+    let container = document.getElementById(containerId);
+    let dayBlocks = container.querySelectorAll(
+        ".day-form-block"
+    );
     let days = [];
 
     dayBlocks.forEach(function(block) {
 
-        let dateInput = block.querySelector(".date-input");
-        let budgetInput = block.querySelector(".budget-input");
-        let activityBlocks = block.querySelectorAll(
+        let dateVal   = block.querySelector(
+            ".date-input"
+        ).value;
+        let budgetVal = block.querySelector(
+            ".budget-input"
+        ).value;
+
+        let actBlocks = block.querySelectorAll(
             ".activity-form-block"
         );
-
         let activities = [];
 
-        activityBlocks.forEach(function(actBlock) {
-
+        actBlocks.forEach(function(actBlock) {
             let desc = actBlock.querySelector(
                 ".activity-desc-input"
             ).value.trim();
-
-            /* Skip empty activity rows */
             if (desc === "") { return; }
-
-            let time = actBlock.querySelector(
-                ".time-input"
-            ).value.trim();
-            let location = actBlock.querySelector(
-                ".location-input"
-            ).value.trim();
-
             activities.push({
                 activity_name: desc,
-                activity_time: time,
-                location: location
+                activity_time: actBlock.querySelector(
+                    ".time-input"
+                ).value.trim(),
+                location: actBlock.querySelector(
+                    ".location-input"
+                ).value.trim()
             });
-
         });
 
         days.push({
-            day_date: dateInput.value,
-            budget: budgetInput.value || 0,
+            day_date:   dateVal,
+            budget:     parseFloat(budgetVal) || 0,
             activities: activities
         });
 
@@ -1203,51 +1117,126 @@ function collectDayData(mode) {
 }
 
 
-/* ─────────────────────────────────────────────────
-   SECTION 9 — DASHBOARD — EDIT PLAN
-───────────────────────────────────────────────── */
+async function savePlan() {
 
-function openEditModal() {
+    let userId   = localStorage.getItem("userId");
+    let planName = document.getElementById(
+        "add-plan-name-display"
+    ).value.trim();
 
-    /* Close the expanded modal first */
-    document.getElementById("expanded-plan-modal")
-            .classList.add("hidden");
+    if (planName === "") {
+        alert("Please enter a journey name.");
+        return;
+    }
 
-    let userId = localStorage.getItem("userId");
+    let days = collectDayData("add");
 
-    /* Fetch the plan data to pre-fill the edit form */
-    fetch("php/itinerary.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "getPlan",
-            planId: currentOpenPlanId,
-            userId: userId
+    if (days.length === 0) {
+        alert("Please add at least one day.");
+        return;
+    }
+
+    /* Validate at least one day has a date */
+    let hasDate = days.some(function(d) {
+        return d.day_date !== "";
+    });
+    if (!hasDate) {
+        alert("Please set a date for at least one day.");
+        return;
+    }
+
+    /* Insert the plan */
+    let { data: plan, error: planError } = await db
+        .from("plans")
+        .insert({
+            user_id:   userId,
+            plan_name: planName
         })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
+        .select()
+        .single();
 
-        if (data.success) {
-            populateEditModal(data.plan);
-            document.getElementById("edit-plan-modal")
-                    .classList.remove("hidden");
+    if (planError) {
+        alert("Failed to create plan: " + planError.message);
+        return;
+    }
+
+    /* Insert each day and its activities */
+    for (let day of days) {
+
+        let { data: dayRow, error: dayError } = await db
+            .from("days")
+            .insert({
+                plan_id:  plan.id,
+                day_date: day.day_date || null,
+                budget:   day.budget
+            })
+            .select()
+            .single();
+
+        if (dayError) {
+            console.error("Day insert error:", dayError);
+            continue;
         }
 
+        if (day.activities.length > 0) {
+
+            let toInsert = day.activities.map(function(a) {
+                return {
+                    day_id:        dayRow.id,
+                    activity_name: a.activity_name,
+                    activity_time: a.activity_time || null,
+                    location:      a.location || null,
+                    is_done:       false
+                };
+            });
+
+            let { error: actError } = await db
+                .from("activities")
+                .insert(toInsert);
+
+            if (actError) {
+                console.error("Activity insert:", actError);
+            }
+
+        }
+
+    }
+
+    /* Log for admin */
+    await db.from("admin_log").insert({
+        action:  "plan_created",
+        user_id: userId,
+        details: planName
     });
+
+    closeAddPlanModal();
+    loadAllPlans();
 
 }
 
 
+/* ─────────────────────────────────────────────────
+   SECTION 10 — EDIT PLAN
+───────────────────────────────────────────────── */
+
+async function openEditModal() {
+
+    document.getElementById("expanded-plan-modal")
+            .classList.add("hidden");
+
+    let plan = await getFullPlan(currentOpenPlanId);
+    populateEditModal(plan);
+
+    document.getElementById("edit-plan-modal")
+            .classList.remove("hidden");
+
+}
+
 function populateEditModal(plan) {
 
-    /* Set the plan name */
     document.getElementById("edit-plan-name-input")
             .value = plan.plan_name;
 
-    /* Clear and rebuild day blocks with existing data */
     let container = document.getElementById(
         "edit-days-container"
     );
@@ -1255,66 +1244,102 @@ function populateEditModal(plan) {
 
     plan.days.forEach(function(day) {
 
-        let dayBlock = "<div class='day-form-block'>";
-        dayBlock += "<div class='day-form-header'>";
-        dayBlock += "<div>";
-        dayBlock += "<p class='day-form-date-label'>Date</p>";
-        /* Pre-fill with existing date */
-        dayBlock += "<input type='date' class='date-input' " +
-                    "value='" + day.day_date + "'>";
-        dayBlock += "</div>";
-        dayBlock += "<div>";
-        dayBlock += "<p class='day-form-budget-label'>" +
-                    "Total Budget</p>";
-        /* Pre-fill with existing budget */
-        dayBlock += "<input type='number' class='budget-input' " +
-                    "value='" + day.budget + "'>";
-        dayBlock += "</div>";
-        dayBlock += "</div>";
+        /* Build the day block using createElement */
+        let dayBlock       = document.createElement("div");
+        dayBlock.className = "day-form-block";
 
-        dayBlock += "<p class='activities-label'>Activities</p>";
+        let headerDiv       = document.createElement("div");
+        headerDiv.className = "day-form-header";
+
+        let dateGroup       = document.createElement("div");
+        let dateLbl         = document.createElement("p");
+        dateLbl.className   = "day-form-date-label";
+        dateLbl.textContent = "Date";
+
+        let dateInput       = document.createElement("input");
+        dateInput.type      = "date";
+        dateInput.className = "date-input";
+        dateInput.value     = day.day_date || "";
+
+        dateGroup.appendChild(dateLbl);
+        dateGroup.appendChild(dateInput);
+
+        let budgetGroup       = document.createElement("div");
+        let budgetLbl         = document.createElement("p");
+        budgetLbl.className   = "day-form-budget-label";
+        budgetLbl.textContent = "Total Budget";
+
+        let budgetInput       = document.createElement("input");
+        budgetInput.type      = "number";
+        budgetInput.className = "budget-input";
+        budgetInput.value     = day.budget || 0;
+
+        budgetInput.addEventListener("input", function() {
+            updateBudgetTotal("edit");
+        });
+
+        budgetGroup.appendChild(budgetLbl);
+        budgetGroup.appendChild(budgetInput);
+
+        headerDiv.appendChild(dateGroup);
+        headerDiv.appendChild(budgetGroup);
+        dayBlock.appendChild(headerDiv);
+
+        /* Delete day button */
+        let deleteDayBtn       = document.createElement("button");
+        deleteDayBtn.className = "delete-day-btn";
+        deleteDayBtn.type      = "button";
+        deleteDayBtn.textContent = "✕ Remove this day";
+        deleteDayBtn.onclick   = function() {
+            container.removeChild(dayBlock);
+            updateDayCount("edit");
+            updateBudgetTotal("edit");
+        };
+        dayBlock.appendChild(deleteDayBtn);
+
+        let activitiesLbl         = document.createElement("p");
+        activitiesLbl.className   = "activities-label";
+        activitiesLbl.textContent = "Activities";
+        dayBlock.appendChild(activitiesLbl);
+
+        let activitiesContainer       = document.createElement("div");
+        activitiesContainer.className = "activities-container";
+        dayBlock.appendChild(activitiesContainer);
 
         /* Pre-fill existing activities */
         day.activities.forEach(function(activity) {
-
-            dayBlock += "<div class='activity-form-block'>";
-            dayBlock += "<input type='text' " +
-                        "class='activity-desc-input' " +
-                        "value='" +
-                        activity.activity_name + "'>";
-            dayBlock += "<div class='activity-time-location-row'>";
-            dayBlock += "<input type='text' class='time-input' " +
-                        "value='" +
-                        activity.activity_time + "'>";
-            dayBlock += "<input type='text' " +
-                        "class='location-input' " +
-                        "value='" + activity.location + "'>";
-            dayBlock += "</div>";
-            dayBlock += "</div>";
-
+            addActivityRowToContainer(
+                activitiesContainer,
+                activity.activity_name,
+                activity.activity_time,
+                activity.location
+            );
         });
 
-        dayBlock += "<button class='add-activity-btn' " +
-                    "onclick='addActivityRow(this)'>" +
-                    "+ Add Activity</button>";
+        let addActBtn         = document.createElement("button");
+        addActBtn.className   = "add-activity-btn";
+        addActBtn.type        = "button";
+        addActBtn.textContent = "+ Add Activity";
+        addActBtn.onclick     = function() {
+            addActivityRowToContainer(activitiesContainer);
+        };
+        dayBlock.appendChild(addActBtn);
 
-        dayBlock += "</div>";
-        container.innerHTML += dayBlock;
+        container.appendChild(dayBlock);
 
     });
 
     updateDayCount("edit");
+    updateBudgetTotal("edit");
 
 }
-
 
 function closeEditModal() {
     document.getElementById("edit-plan-modal")
             .classList.add("hidden");
 }
 
-
-function saveEditedPlan() {
+async function saveEditedPlan() {
 
     let planName = document.getElementById(
         "edit-plan-name-input"
@@ -1325,44 +1350,76 @@ function saveEditedPlan() {
         return;
     }
 
+    await db
+        .from("plans")
+        .update({ plan_name: planName })
+        .eq("id", currentOpenPlanId);
+
+    let { data: oldDays } = await db
+        .from("days")
+        .select("id")
+        .eq("plan_id", currentOpenPlanId);
+
+    if (oldDays && oldDays.length > 0) {
+        let oldDayIds = oldDays.map(function(d) {
+            return d.id;
+        });
+        await db
+            .from("activities")
+            .delete()
+            .in("day_id", oldDayIds);
+    }
+
+    await db
+        .from("days")
+        .delete()
+        .eq("plan_id", currentOpenPlanId);
+
     let days = collectDayData("edit");
 
-    fetch("php/itinerary.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "editPlan",
-            planId: currentOpenPlanId,
-            planName: planName,
-            days: days
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
+    for (let day of days) {
 
-        if (data.success) {
-            closeEditModal();
-            loadAllPlans();
-        } else {
-            alert(data.message);
+        let { data: dayRow } = await db
+            .from("days")
+            .insert({
+                plan_id:  currentOpenPlanId,
+                day_date: day.day_date || null,
+                budget:   day.budget
+            })
+            .select()
+            .single();
+
+        if (day.activities.length > 0) {
+            await db.from("activities").insert(
+                day.activities.map(function(a) {
+                    return {
+                        day_id:        dayRow.id,
+                        activity_name: a.activity_name,
+                        activity_time: a.activity_time || null,
+                        location:      a.location || null,
+                        is_done:       false
+                    };
+                })
+            );
         }
 
-    });
+    }
+
+    closeEditModal();
+    loadAllPlans();
 
 }
 
 
 /* ─────────────────────────────────────────────────
-   SECTION 10 — ACCOUNT PAGE
+   SECTION 11 — ACCOUNT PAGE
 ───────────────────────────────────────────────── */
 
-function initAccountPage() {
+async function initAccountPage() {
 
     let username = localStorage.getItem("username");
+    let userId   = localStorage.getItem("userId");
 
-    /* Fill all username display elements */
     let displayUsername = document.getElementById(
         "display-username"
     );
@@ -1370,117 +1427,75 @@ function initAccountPage() {
         displayUsername.textContent = username;
     }
 
-    let viewUsername = document.getElementById("view-username");
+    let viewUsername = document.getElementById(
+        "view-username"
+    );
     if (viewUsername) {
         viewUsername.textContent = username;
     }
 
-    /* Fill edit input with current username */
     let editInput = document.getElementById(
         "edit-username-input"
     );
-    if (editInput) {
-        editInput.value = username;
+    if (editInput) { editInput.value = username; }
+
+    let { data: profile } = await db
+        .from("profiles")
+        .select("completed_count")
+        .eq("id", userId)
+        .single();
+
+    let { count: totalPlans } = await db
+        .from("plans")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", userId);
+
+    let totalEl = document.getElementById(
+        "total-plans-count"
+    );
+    if (totalEl) {
+        totalEl.textContent = totalPlans || 0;
     }
 
-    /* Load journey stats from PHP */
-    loadAccountStats();
+    let completedEl = document.getElementById(
+        "completed-count"
+    );
+    if (completedEl) {
+        completedEl.textContent = profile
+            ? profile.completed_count
+            : 0;
+    }
 
 }
-
-
-function loadAccountStats() {
-
-    let userId = localStorage.getItem("userId");
-
-    fetch("php/auth.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "getStats",
-            userId: userId
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
-
-        if (data.success) {
-
-            document.getElementById("total-plans-count")
-                    .textContent = data.totalPlans;
-            document.getElementById("completed-count")
-                    .textContent = data.completedCount;
-
-        }
-
-    });
-
-}
-
 
 function showEditState() {
-
     document.getElementById("profile-view-state")
             .classList.add("hidden");
     document.getElementById("profile-edit-state")
             .classList.remove("hidden");
-
 }
-
 
 function hideEditState() {
-
     document.getElementById("profile-edit-state")
             .classList.add("hidden");
     document.getElementById("profile-view-state")
             .classList.remove("hidden");
-
 }
-
 
 function togglePasswordVisibility() {
-
     let display = document.getElementById("password-display");
-    let icon = document.getElementById("eye-icon-img");
-    let username = localStorage.getItem("username");
-
-    /* If currently showing dots — reveal password */
     if (display.textContent.includes("•")) {
-        /* Fetch real password from PHP session */
-        fetch("php/auth.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                action: "getPassword",
-                userId: localStorage.getItem("userId")
-            })
-        })
-        .then(function(response) {
-            return response.json();
-        })
-        .then(function(data) {
-            if (data.success) {
-                display.textContent = data.password;
-            }
-        });
+        display.textContent = "Passwords are secured by Supabase.";
     } else {
-        /* Hide again — show dots */
         display.textContent = "••••••••";
     }
-
 }
 
+async function saveProfileChanges() {
 
-function saveProfileChanges() {
-
-    let userId = localStorage.getItem("userId");
+    let userId      = localStorage.getItem("userId");
     let newUsername = document.getElementById(
         "edit-username-input"
-    ).value.trim();
-    let newPassword = document.getElementById(
-        "edit-password-input"
     ).value.trim();
 
     if (newUsername === "") {
@@ -1488,92 +1503,92 @@ function saveProfileChanges() {
         return;
     }
 
-    fetch("php/auth.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "updateProfile",
-            userId: userId,
-            username: newUsername,
-            password: newPassword
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
+    let { error } = await db
+        .from("profiles")
+        .update({ username: newUsername })
+        .eq("id", userId);
 
-        if (data.success) {
-            /* Update localStorage with new username */
-            localStorage.setItem("username", newUsername);
-            alert("Profile updated successfully.");
-            /* Reload page to show updated values */
-            window.location.reload();
-        } else {
-            alert(data.message);
-        }
+    if (error) {
+        alert("Failed to update username: " + error.message);
+        return;
+    }
 
-    });
+    localStorage.setItem("username", newUsername);
+    alert("Profile updated successfully.");
+    window.location.reload();
 
 }
-
 
 function openDeleteAccountModal() {
     document.getElementById("delete-account-modal")
             .classList.remove("hidden");
 }
 
-
 function closeDeleteAccountModal() {
     document.getElementById("delete-account-modal")
             .classList.add("hidden");
 }
 
-
-function confirmDeleteAccount() {
+async function confirmDeleteAccount() {
 
     let userId = localStorage.getItem("userId");
 
-    fetch("php/auth.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "deleteAccount",
-            userId: userId
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
+    let { data: plans } = await db
+        .from("plans")
+        .select("id")
+        .eq("user_id", userId);
 
-        if (data.success) {
-            localStorage.clear();
-            window.location.href = "signin.html";
+    if (plans && plans.length > 0) {
+
+        let planIds = plans.map(function(p) { return p.id; });
+
+        let { data: days } = await db
+            .from("days")
+            .select("id")
+            .in("plan_id", planIds);
+
+        if (days && days.length > 0) {
+            let dayIds = days.map(function(d) {
+                return d.id;
+            });
+            await db
+                .from("activities")
+                .delete()
+                .in("day_id", dayIds);
         }
 
-    });
+        await db.from("days").delete()
+                .in("plan_id", planIds);
+        await db.from("plans").delete()
+                .in("id", planIds);
+
+    }
+
+    await db.from("admin_log").delete()
+            .eq("user_id", userId);
+    await db.from("profiles").delete()
+            .eq("id", userId);
+
+    await db.auth.signOut();
+    localStorage.clear();
+    window.location.href = "signin.html";
 
 }
 
 
 /* ─────────────────────────────────────────────────
-   SECTION 11 — ADMIN PAGES
+   SECTION 12 — ADMIN PAGES
 ───────────────────────────────────────────────── */
 
-function initAdminPage() {
+async function initAdminPage() {
 
-    /* Verify this user is actually an admin */
     let role = localStorage.getItem("role");
     if (role !== "admin") {
-        /* Not an admin — redirect to homepage */
         window.location.href = "index.html";
         return;
     }
 
-    /* Fill sidebar and welcome username */
-    let username = localStorage.getItem("username");
-
+    let username    = localStorage.getItem("username");
     let sidebarName = document.getElementById(
         "admin-display-name"
     );
@@ -1588,60 +1603,211 @@ function initAdminPage() {
         welcomeName.textContent = username;
     }
 
-    /* Load all statistics from PHP */
     loadAdminStats();
 
 }
 
+async function loadAdminStats() {
 
-function loadAdminStats() {
+    /* User total */
+    let { count: userTotal } = await db
+        .from("profiles")
+        .select("*", { count: "exact", head: true })
+        .eq("role", "user");
 
-    fetch("php/admin.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "getStats" })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
+    /* Itinerary total */
+    let { count: itineraryTotal } = await db
+        .from("plans")
+        .select("*", { count: "exact", head: true });
 
-        if (data.success) {
+    /* Completion total */
+    let { data: profilesData } = await db
+        .from("profiles")
+        .select("completed_count");
 
-            /* Fill the three stat cards */
-            document.getElementById("stat-user-total")
-                    .textContent = data.userTotal;
-            document.getElementById("stat-itinerary-total")
-                    .textContent = data.itineraryTotal;
-            document.getElementById("stat-completion-total")
-                    .textContent = data.completionTotal;
+    let completionTotal = profilesData
+        ? profilesData.reduce(function(sum, p) {
+            return sum + (p.completed_count || 0);
+          }, 0)
+        : 0;
 
-            /* Fill the four info boxes */
-            document.getElementById("stat-popular-plan")
-                    .textContent = data.popularPlan;
-            document.getElementById("stat-popular-location")
-                    .textContent = data.popularLocation;
-            document.getElementById("stat-common-day")
-                    .textContent = data.commonDay;
-            document.getElementById("stat-common-length")
-                    .textContent = data.commonLength;
+    /* Most popular plan */
+    let { data: allPlans } = await db
+        .from("plans")
+        .select("plan_name");
 
-            /* Fill the two teal boxes */
-            document.getElementById("stat-active-username")
-                    .textContent = data.activeUsername;
-            document.getElementById("stat-active-plans")
-                    .textContent = data.activePlans;
-            document.getElementById("stat-tracked-count")
-                    .textContent = data.trackedCount;
+    let planCounts = {};
+    if (allPlans) {
+        allPlans.forEach(function(p) {
+            planCounts[p.plan_name] =
+                (planCounts[p.plan_name] || 0) + 1;
+        });
+    }
 
+    let popularPlanName  = "No data yet";
+    let popularPlanCount = 0;
+    Object.keys(planCounts).forEach(function(name) {
+        if (planCounts[name] > popularPlanCount) {
+            popularPlanName  = name;
+            popularPlanCount = planCounts[name];
         }
-
     });
+    let popularPlan = popularPlanCount > 0
+        ? popularPlanName +
+          " (" + popularPlanCount + " times)"
+        : "No data yet";
+
+    /* Most popular location */
+    let { data: allActivities } = await db
+        .from("activities")
+        .select("location");
+
+    let locationCounts = {};
+    if (allActivities) {
+        allActivities.forEach(function(a) {
+            if (!a.location) { return; }
+            locationCounts[a.location] =
+                (locationCounts[a.location] || 0) + 1;
+        });
+    }
+
+    let popularLocName  = "No data yet";
+    let popularLocCount = 0;
+    Object.keys(locationCounts).forEach(function(loc) {
+        if (locationCounts[loc] > popularLocCount) {
+            popularLocName  = loc;
+            popularLocCount = locationCounts[loc];
+        }
+    });
+    let popularLocation = popularLocCount > 0
+        ? popularLocName + " (" + popularLocCount + " times)"
+        : "No data yet";
+
+    /* Common day of week */
+    let { data: allDays } = await db
+        .from("days")
+        .select("day_date");
+
+    let dayCounts = {};
+    let dayNames  = [
+        "Sunday","Monday","Tuesday","Wednesday",
+        "Thursday","Friday","Saturday"
+    ];
+
+    if (allDays) {
+        allDays.forEach(function(d) {
+            if (!d.day_date) { return; }
+            let idx     = new Date(d.day_date).getDay();
+            let dayName = dayNames[idx];
+            dayCounts[dayName] =
+                (dayCounts[dayName] || 0) + 1;
+        });
+    }
+
+    let commonDayName  = "No data yet";
+    let commonDayCount = 0;
+    Object.keys(dayCounts).forEach(function(d) {
+        if (dayCounts[d] > commonDayCount) {
+            commonDayName  = d;
+            commonDayCount = dayCounts[d];
+        }
+    });
+    let commonDay = commonDayCount > 0
+        ? commonDayName + " (" + commonDayCount + " times)"
+        : "No data yet";
+
+    /* Common itinerary length */
+    let { data: planDaysData } = await db
+        .from("days")
+        .select("plan_id");
+
+    let lengthCounts = {};
+    if (planDaysData) {
+        let planDayCounts = {};
+        planDaysData.forEach(function(d) {
+            planDayCounts[d.plan_id] =
+                (planDayCounts[d.plan_id] || 0) + 1;
+        });
+        Object.keys(planDayCounts).forEach(function(pid) {
+            let len = planDayCounts[pid];
+            lengthCounts[len] =
+                (lengthCounts[len] || 0) + 1;
+        });
+    }
+
+    let commonLenNum   = "No data yet";
+    let commonLenCount = 0;
+    Object.keys(lengthCounts).forEach(function(len) {
+        if (lengthCounts[len] > commonLenCount) {
+            commonLenNum   = len;
+            commonLenCount = lengthCounts[len];
+        }
+    });
+    let commonLength = commonLenCount > 0
+        ? commonLenNum +
+          " Days (" + commonLenCount + " plans)"
+        : "No data yet";
+
+    /* Most active user */
+    let { data: userPlansData } = await db
+        .from("plans")
+        .select("user_id");
+
+    let userPlanCounts = {};
+    if (userPlansData) {
+        userPlansData.forEach(function(p) {
+            userPlanCounts[p.user_id] =
+                (userPlanCounts[p.user_id] || 0) + 1;
+        });
+    }
+
+    let activeUserId    = null;
+    let activeUserCount = 0;
+    Object.keys(userPlanCounts).forEach(function(uid) {
+        if (userPlanCounts[uid] > activeUserCount) {
+            activeUserId    = uid;
+            activeUserCount = userPlanCounts[uid];
+        }
+    });
+
+    let activeUsername = "No data yet";
+    if (activeUserId) {
+        let { data: activeProfile } = await db
+            .from("profiles")
+            .select("username")
+            .eq("id", activeUserId)
+            .single();
+        if (activeProfile) {
+            activeUsername = activeProfile.username;
+        }
+    }
+
+    /* Tracked count */
+    let { count: trackedCount } = await db
+        .from("plans")
+        .select("*", { count: "exact", head: true })
+        .eq("is_tracked", true);
+
+    /* Fill elements */
+    let fill = function(id, val) {
+        let el = document.getElementById(id);
+        if (el) { el.textContent = val; }
+    };
+
+    fill("stat-user-total",       userTotal       || 0);
+    fill("stat-itinerary-total",  itineraryTotal  || 0);
+    fill("stat-completion-total", completionTotal);
+    fill("stat-popular-plan",     popularPlan);
+    fill("stat-popular-location", popularLocation);
+    fill("stat-common-day",       commonDay);
+    fill("stat-common-length",    commonLength);
+    fill("stat-active-username",  activeUsername);
+    fill("stat-active-plans",     activeUserCount || 0);
+    fill("stat-tracked-count",    trackedCount    || 0);
 
 }
 
-
-function initAdminAccountPage() {
+async function initAdminAccountPage() {
 
     let role = localStorage.getItem("role");
     if (role !== "admin") {
@@ -1651,38 +1817,22 @@ function initAdminAccountPage() {
 
     let username = localStorage.getItem("username");
 
-    /* Fill all three username display elements */
-    let sidebarName = document.getElementById(
-        "admin-display-name"
-    );
-    if (sidebarName) {
-        sidebarName.textContent = username;
-    }
-
-    let accountUsername = document.getElementById(
-        "account-display-username"
-    );
-    if (accountUsername) {
-        accountUsername.textContent = username;
-    }
-
-    let viewUsername = document.getElementById(
+    let ids = [
+        "admin-display-name",
+        "account-display-username",
         "admin-view-username"
-    );
-    if (viewUsername) {
-        viewUsername.textContent = username;
-    }
+    ];
+    ids.forEach(function(id) {
+        let el = document.getElementById(id);
+        if (el) { el.textContent = username; }
+    });
 
-    /* Pre-fill the edit input */
     let editInput = document.getElementById(
         "admin-edit-username"
     );
-    if (editInput) {
-        editInput.value = username;
-    }
+    if (editInput) { editInput.value = username; }
 
 }
-
 
 function showAdminEditState() {
     document.getElementById("admin-view-state")
@@ -1691,7 +1841,6 @@ function showAdminEditState() {
             .classList.remove("hidden");
 }
 
-
 function hideAdminEditState() {
     document.getElementById("admin-edit-state")
             .classList.add("hidden");
@@ -1699,15 +1848,11 @@ function hideAdminEditState() {
             .classList.remove("hidden");
 }
 
+async function saveAdminProfileChanges() {
 
-function saveAdminProfileChanges() {
-
-    let userId = localStorage.getItem("userId");
+    let userId      = localStorage.getItem("userId");
     let newUsername = document.getElementById(
         "admin-edit-username"
-    ).value.trim();
-    let newPassword = document.getElementById(
-        "admin-edit-password"
     ).value.trim();
 
     if (newUsername === "") {
@@ -1715,70 +1860,42 @@ function saveAdminProfileChanges() {
         return;
     }
 
-    fetch("php/auth.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "updateProfile",
-            userId: userId,
-            username: newUsername,
-            password: newPassword
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
+    let { error } = await db
+        .from("profiles")
+        .update({ username: newUsername })
+        .eq("id", userId);
 
-        if (data.success) {
-            localStorage.setItem("username", newUsername);
-            alert("Profile updated successfully.");
-            window.location.reload();
-        } else {
-            alert(data.message);
-        }
+    if (error) {
+        alert("Failed to update: " + error.message);
+        return;
+    }
 
-    });
+    localStorage.setItem("username", newUsername);
+    alert("Profile updated successfully.");
+    window.location.reload();
 
 }
 
-
 function adminSignOut() {
-
-    fetch("php/auth.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "logout" })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function() {
-        localStorage.clear();
-        window.location.href = "signin.html";
-    });
-
+    db.auth.signOut();
+    localStorage.clear();
+    window.location.href = "signin.html";
 }
 
 
 /* ─────────────────────────────────────────────────
-   SECTION 12 — UTILITY FUNCTIONS
-   Small helper functions used across multiple sections.
+   SECTION 13 — UTILITY FUNCTIONS
 ───────────────────────────────────────────────── */
 
 function formatCurrency(amount) {
-    /* Formats a number as Philippine Peso currency */
-    /* 1500 becomes "₱1,500" */
-    return "₱" + parseFloat(amount).toLocaleString();
+    return "&#8369;" + parseFloat(amount).toLocaleString();
 }
 
-
 function formatDate(dateString) {
-    /* Formats "2026-05-07" to "Thu, May 7" */
     let dateObj = new Date(dateString);
     return dateObj.toLocaleDateString("en-US", {
         weekday: "short",
-        month: "short",
-        day: "numeric"
+        month:   "short",
+        day:     "numeric"
     });
 }

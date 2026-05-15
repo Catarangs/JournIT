@@ -739,6 +739,7 @@ img {
     max-width: 1100px;
     margin: 0 auto;
     padding: 36px 24px;
+    min-height: calc(100vh - 200px);
 }
 
 /* TOP BAR: heading left, Add Plan button right */
@@ -2349,4 +2350,56 @@ img {
     color: var(--color-text-light);
     font-style: italic;
     margin-top: 2px;
+}
+/* ─────────────────────────────────────────────────
+   DELETE DAY AND ACTIVITY BUTTONS
+   Added to support removing days and activities
+   from the add and edit plan modals.
+───────────────────────────────────────────────── */
+
+/* DELETE DAY BUTTON: appears below the day header */
+.delete-day-btn {
+    background: none;
+    border: 1px solid var(--color-accent);
+    color: var(--color-accent);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-bottom: 10px;
+    transition: all 0.2s ease;
+    font-family: var(--font-body);
+}
+
+.delete-day-btn:hover {
+    background-color: var(--color-accent);
+    color: var(--color-white);
+}
+
+/* DELETE ACTIVITY BUTTON: top right of each activity */
+.delete-activity-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: none;
+    border: none;
+    color: var(--color-text-light);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: color 0.2s ease;
+    font-family: var(--font-body);
+}
+
+.delete-activity-btn:hover {
+    color: var(--color-accent);
+}
+
+/* ACTIVITIES CONTAINER inside each day form block */
+.activities-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 8px;
 }
