@@ -1,8 +1,8 @@
-// 1. Connect this specific branch to Supabase
+// 1. SUPABASE CONFIGURATION
 const SUPABASE_URL = 'https://vptvzuzydcweouodwvuy.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_m1uCdwzt48lWw_WvGg23ag_nucwaJnz'; 
+const SUPABASE_KEY = 'sb_publishable_m1uCdwzt48lWw_WvGg23ag_nucwaJnz';
 
-// Initialize the client
+// Initialize the Supabase Client
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /* ═══════════════════════════════════════════════════
@@ -142,84 +142,63 @@ function goToSlide(index, slides, dots) {
    All communicate with php/auth.php.
 ───────────────────────────────────────────────── */
 
+/* ───────────────────────────────────────────────── 
+   SECTION 3 — AUTHENTICATION (Supabase)
+   ───────────────────────────────────────────────── */
+
 async function signUp() {
+    const email = document.getElementById("username").value.trim(); 
+    const password = document.getElementById("password").value.trim();
 
-    /* Read values from the input fields */
-    let username = document.getElementById("username").value.trim();
-    let password = document.getElementById("password").value.trim();
-
-    /* .trim() removes any accidental spaces the user typed */
-
-    /* Validate — do not send empty fields to PHP */
-    if (username === "" || password === "") {
-        alert("Please enter both a username and password.");
+    if (email === "" || password === "") {
+        alert("Please enter both an email and password.");
         return;
-        /* return stops the function from continuing */
     }
 
-// This replaces the old PHP fetch logic
     const { data, error } = await supabaseClient.auth.signUp({
-        email: username, // Note: Supabase expects an email format
+        email: email,
         password: password,
     });
 
     if (error) {
         alert("Error: " + error.message);
     } else {
-        alert("Account created! Please check your email for a confirmation link.");
+        alert("Success! Check your email for a confirmation link.");
         window.location.href = "signin.html";
     }
-
 }
 
-
-// Add 'async' before the function name
 async function signIn() {
-    let username = document.getElementById("username").value.trim();
-    let password = document.getElementById("password").value.trim();
+    const email = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value.trim();
 
-    if (username === "" || password === "") {
-        alert("Please enter your username and password.");
+    if (email === "" || password === "") {
+        alert("Please enter your email and password.");
         return;
     }
 
-    // This replaces the old fetch("php/auth.php"...) logic
+    // FIXED: Changed 'supabase' to 'supabaseClient' to match line 7
     const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email: username, // Your form uses 'username' as the ID for the email field
+        email: email,
         password: password,
     });
 
     if (error) {
         alert("Login Failed: " + error.message);
     } else {
-        /* Save user info to localStorage so the dashboard knows who is logged in */
         localStorage.setItem("username", data.user.email);
         localStorage.setItem("userId", data.user.id);
         
         alert("Welcome back!");
-        window.location.href = "index.html"; // Redirect to your homepage/dashboard
+        window.location.href = "index.html";
     }
 }
 
-
 function logout() {
-
-    /* Tell PHP to end the session */
-    fetch("php/auth.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "logout" })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function() {
-        /* Clear localStorage — removes all saved user data */
+    supabaseClient.auth.signOut().then(() => {
         localStorage.clear();
-        /* Redirect to sign in page */
         window.location.href = "signin.html";
     });
-
 }
 
 
