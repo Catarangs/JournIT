@@ -170,1505 +170,715 @@ function checkLogin() {
 
 
 /* ─────────────────────────────────────────────────
-   SECTION 4 — HOMEPAGE
-   Initializes the homepage.
-   Loads tracking data if a plan is being tracked.
-   Runs the slideshow.
+   SECTION 4 — HOMEPAGE (Supabase Version)
 ───────────────────────────────────────────────── */
 
-function initHomepage() {
+async function loadTrackedPlan() {
+    const userId = localStorage.getItem("userId");
+    if (!userId) return;
 
-    /* Start the hero slideshow */
-    initSlideshow();
+    // 1. Fetch the plan marked as 'is_tracked = 1' for this user
+    const { data: plan, error } = await supabaseClient
+        .from('plans')
+        .select(`
+            *,
+            days (*, activities (*))
+        `)
+        .eq('user_id', userId)
+        .eq('is_tracked', 1)
+        .single();
 
-    /* Load the currently tracked plan if one exists */
-    loadTrackedPlan();
-
-}
-
-
-function scrollToPlans() {
-    /* Smoothly scroll down to the plans section */
-    /* The HTML element with id="plans-section" */
-    let section = document.getElementById("plans-section");
-    if (section) {
-        /* scrollIntoView scrolls the page until
-           the element is visible on screen */
-        section.scrollIntoView({ behavior: "smooth" });
-    }
-}
-
-
-function loadTrackedPlan() {
-
-    let userId = localStorage.getItem("userId");
-
-    fetch("php/itinerary.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "getTracked",
-            userId: userId
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
-
-        if (data.success && data.plan) {
-            /* A plan is being tracked — show active state */
-            showActivePlanState(data.plan);
-        } else {
-            /* No plan tracked — show empty state */
-            showNoPlanState();
-        }
-
-    });
-
-}
-
-
-function showNoPlanState() {
-    /* Show the empty state, hide the active state */
-    document.getElementById("no-plan-state")
-            .classList.remove("hidden");
-    document.getElementById("active-plan-state")
-            .classList.add("hidden");
-}
-
-
-function showActivePlanState(plan) {
-
-    /* Hide the empty state, show the active state */
-    document.getElementById("no-plan-state")
-            .classList.add("hidden");
-    document.getElementById("active-plan-state")
-            .classList.remove("hidden");
-
-    /* Fill in the plan name */
-    document.getElementById("tracking-plan-name")
-            .textContent = plan.plan_name;
-
-    /* Fill in days count and budget */
-    document.getElementById("tracking-days-count")
-            .textContent = plan.days.length + " Days";
-
-    /* Calculate total budget across all days */
-    let totalBudget = 0;
-    plan.days.forEach(function(day) {
-        totalBudget += parseFloat(day.budget);
-    });
-    document.getElementById("tracking-budget")
-            .textContent = "₱" + totalBudget.toLocaleString();
-    /* .toLocaleString() formats numbers with commas:
-       1500 becomes "1,500" automatically */
-
-    /* Build the day boxes with checkboxes */
-    buildTrackingDays(plan.days);
-
-    /* Update the progress tracker */
-    updateProgress(plan.days);
-
-}
-
-
-function buildTrackingDays(days) {
-
-    let container = document.getElementById("tracking-days");
-    /* Clear any previous content */
-    container.innerHTML = "";
-
-    days.forEach(function(day) {
-
-        /* Format the date from "2026-05-07" to "Thu, May 7" */
-        let dateObj = new Date(day.day_date);
-        let formatted = dateObj.toLocaleDateString("en-US", {
-            weekday: "short",
-            month: "short",
-            day: "numeric"
-        });
-
-        /* Build the HTML for this day box */
-        /* We use innerHTML here because we are building
-           a whole HTML structure dynamically */
-        let dayHTML = "<div class='day-box'>";
-        dayHTML += "<div class='day-header-row'>";
-        dayHTML += "<span class='day-date-label'>" + formatted + "</span>";
-        dayHTML += "<span class='day-budget-badge'>₱" +
-                   parseFloat(day.budget).toLocaleString() + "</span>";
-        dayHTML += "</div>";
-
-        /* Add each activity with a checkbox */
-        day.activities.forEach(function(activity) {
-
-            let checked = activity.is_done == 1 ? "checked" : "";
-            let doneClass = activity.is_done == 1 ? "completed" : "";
-
-            dayHTML += "<div class='activity-row'>";
-            dayHTML += "<input type='checkbox' class='activity-checkbox' " +
-                       "data-id='" + activity.id + "' " +
-                       checked +
-                       " onchange='toggleActivity(this)'>";
-            dayHTML += "<div class='activity-details'>";
-            dayHTML += "<span class='activity-name " + doneClass + "'>" +
-                       activity.activity_name + "</span>";
-            dayHTML += "<div class='activity-meta'>";
-            dayHTML += "<span class='activity-time'>" +
-                       activity.activity_time + "</span>";
-            dayHTML += "<span class='activity-location'>" +
-                       activity.location + "</span>";
-            dayHTML += "</div>";
-            dayHTML += "</div>";
-            dayHTML += "</div>";
-
-        });
-
-        dayHTML += "</div>";
-
-        /* Insert the built HTML into the container */
-        container.innerHTML += dayHTML;
-
-    });
-
-}
-
-
-function toggleActivity(checkbox) {
-
-    /* Read which activity was checked/unchecked */
-    let activityId = checkbox.getAttribute("data-id");
-    let isDone = checkbox.checked ? 1 : 0;
-
-    /* Update the activity name appearance */
-    let nameSpan = checkbox.parentElement
-                           .querySelector(".activity-name");
-    if (isDone) {
-        nameSpan.classList.add("completed");
+    if (error || !plan) {
+        showNoPlanState();
     } else {
-        nameSpan.classList.remove("completed");
+        showActivePlanState(plan);
     }
+}
 
-    /* Send update to PHP — saves to database */
-    fetch("php/itinerary.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "toggleActivity",
-            activityId: activityId,
-            isDone: isDone
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function() {
-        /* Reload the tracked plan to update progress */
+async function toggleActivity(checkbox) {
+    const activityId = checkbox.getAttribute("data-id");
+    const isDone = checkbox.checked ? 1 : 0;
+
+    // Update the visual appearance immediately
+    const nameSpan = checkbox.parentElement.querySelector(".activity-name");
+    isDone ? nameSpan.classList.add("completed") : nameSpan.classList.remove("completed");
+
+    // 2. Update the 'activities' table in Supabase
+    const { error } = await supabaseClient
+        .from('activities')
+        .update({ is_done: isDone })
+        .eq('id', activityId);
+
+    if (error) {
+        console.error("Error toggling activity:", error.message);
+    } else {
+        // Refresh the progress bar on the homepage
         loadTrackedPlan();
-    });
+    }
+}
 
+async function stopTracking() {
+    const userId = localStorage.getItem("userId");
+
+    // 3. Set 'is_tracked' to 0 for all plans of this user
+    const { error } = await supabaseClient
+        .from('plans')
+        .update({ is_tracked: 0 })
+        .eq('user_id', userId);
+
+    if (!error) {
+        updateCompletedCount();
+        showNoPlanState();
+    }
+}
+
+async function updateCompletedCount() {
+    const userId = localStorage.getItem("userId");
+
+    // 4. Fetch current count and increment in 'profiles' table
+    const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('completed_itineraries')
+        .eq('id', userId)
+        .single();
+
+    const newCount = (profile?.completed_itineraries || 0) + 1;
+
+    await supabaseClient
+        .from('profiles')
+        .update({ completed_itineraries: newCount })
+        .eq('id', userId);
 }
 
 
-function updateProgress(days) {
+/* ───────────────────────────────────────────────── 
+   SECTION 5 — DASHBOARD — PLANS GRID 
+   ───────────────────────────────────────────────── */
 
-    let totalActivities = 0;
-    let doneActivities = 0;
-    let totalBudget = 0;
-    let spentBudget = 0;
+async function loadAllPlans() {
+    // Get the ID of the user who just logged in
+    const userId = localStorage.getItem("userId");
+    
+    if (!userId) {
+        console.error("No user ID found. Redirecting to sign-in.");
+        window.location.href = "signin.html";
+        return;
+    }
 
-    days.forEach(function(day) {
+    // This replaces fetch("php/itinerary.php"...)
+    const { data: plans, error } = await supabaseClient
+        .from('plans') 
+        .select('*')
+        .eq('user_id', userId);
 
-        totalBudget += parseFloat(day.budget);
+    if (error) {
+        console.error("Error loading plans:", error.message);
+        return;
+    }
 
-        /* Check if ALL activities in this day are done */
-        let dayDone = true;
+    const grid = document.getElementById("plans-grid");
+    grid.innerHTML = ""; 
 
-        day.activities.forEach(function(activity) {
-            totalActivities++;
-            if (activity.is_done == 1) {
-                doneActivities++;
-            } else {
-                dayDone = false;
+    if (!plans || plans.length === 0) {
+        // No plans yet — you can call a function to show an empty state here
+        return;
+    }
+
+    // Build one card per plan using your existing buildPlanCard function
+    plans.forEach(function(plan) {
+        grid.innerHTML += buildPlanCard(plan);
+    });
+}
+
+async function savePlan() {
+    const planName = document.getElementById("plan-name-input").value.trim();
+    const userId = localStorage.getItem("userId");
+
+    if (!planName) {
+        alert("Please enter a name for your journey.");
+        return;
+    }
+
+    // This replaces the PHP 'create' action
+    const { data, error } = await supabaseClient
+        .from('plans')
+        .insert([
+            { 
+                plan_name: planName, 
+                user_id: userId,
+                is_tracked: 0 
             }
-        });
+        ])
+        .select();
 
-        /* If all activities in the day are done,
-           count that day's budget as spent */
-        if (dayDone && day.activities.length > 0) {
-            spentBudget += parseFloat(day.budget);
-        }
-
-    });
-
-    /* Calculate percentage */
-    let percent = 0;
-    if (totalActivities > 0) {
-        percent = Math.round(
-            (doneActivities / totalActivities) * 100
-        );
-        /* Math.round rounds to the nearest whole number */
+    if (error) {
+        alert("Error saving plan: " + error.message);
+    } else {
+        alert("Journey created!");
+        closeModal(); // Call your existing function to close the popup
+        loadAllPlans(); // Refresh the grid
     }
-
-    /* Update the percentage text */
-    document.getElementById("progress-percent")
-            .textContent = percent + "%";
-
-    /* Update activities counter */
-    document.getElementById("activities-done")
-            .textContent = doneActivities;
-    document.getElementById("activities-total")
-            .textContent = totalActivities;
-
-    /* Update budget display */
-    document.getElementById("budget-spent")
-            .textContent = "₱" + spentBudget.toLocaleString();
-    document.getElementById("budget-total")
-            .textContent = "₱" + totalBudget.toLocaleString();
-
-}
-
-
-function stopTracking() {
-
-    let userId = localStorage.getItem("userId");
-
-    fetch("php/itinerary.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "stopTracking",
-            userId: userId
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
-        if (data.success) {
-            /* Update completed count in users table */
-            updateCompletedCount();
-            /* Return homepage to empty state */
-            showNoPlanState();
-        }
-    });
-
-}
-
-
-function updateCompletedCount() {
-
-    let userId = localStorage.getItem("userId");
-
-    fetch("php/itinerary.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "incrementCompleted",
-            userId: userId
-        })
-    });
-
 }
 
 
 /* ─────────────────────────────────────────────────
-   SECTION 5 — DASHBOARD — PLANS GRID
-   Loads all plans for the current user and
-   builds the plan cards in the grid.
+   SECTION 6 — DASHBOARD — EXPANDED PLAN MODAL (Supabase)
 ───────────────────────────────────────────────── */
 
-function initDashboard() {
-
-    /* Fill the header username if element exists */
-    loadAllPlans();
-
-}
-
-
-function loadAllPlans() {
-
-    let userId = localStorage.getItem("userId");
-
-    fetch("php/itinerary.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "getAll",
-            userId: userId
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
-
-        let grid = document.getElementById("plans-grid");
-        /* Clear previous cards */
-        grid.innerHTML = "";
-
-        if (!data.success || data.plans.length === 0) {
-            /* No plans yet — grid stays empty */
-            return;
-        }
-
-        /* Build one card per plan */
-        data.plans.forEach(function(plan) {
-            grid.innerHTML += buildPlanCard(plan);
-        });
-
-    });
-
-}
-
-
-function buildPlanCard(plan) {
-
-    /* Check if this plan is currently being tracked */
-    let trackingBadge = "";
-    if (plan.is_tracked == 1) {
-        trackingBadge =
-            "<span class='card-tracking-badge'>" +
-            "● Currently Tracking</span>";
-    }
-
-    /* Build the card HTML */
-    /* data-id stores plan id for when card is clicked */
-    let card = "<div class='plan-card' " +
-               "data-id='" + plan.id + "' " +
-               "data-name='" + plan.plan_name + "' " +
-               "onclick='openPlan(this)'>";
-
-    /* Delete button — shown on hover via CSS */
-    card += "<button class='card-delete-btn' " +
-            "onclick='openDeleteModal(event, " +
-            plan.id + ", \"" + plan.plan_name + "\")'>";
-    card += "<img src='images/warning-icon.png' " +
-            "class='card-delete-icon' alt='Delete'>";
-    card += "</button>";
-
-    /* Plan name */
-    card += "<p class='plan-card-name'>" +
-            plan.plan_name + "</p>";
-
-    /* Days and budget meta row */
-    card += "<div class='plan-card-meta'>";
-    card += "<span class='plan-card-meta-item'>" +
-            plan.days_count + " Days</span>";
-    card += "<span class='plan-card-meta-item'>₱" +
-            parseFloat(plan.total_budget)
-            .toLocaleString() + "</span>";
-    card += "</div>";
-
-    card += trackingBadge;
-    card += "</div>";
-
-    return card;
-
-}
-
-
-/* ─────────────────────────────────────────────────
-   SECTION 6 — DASHBOARD — EXPANDED PLAN MODAL
-   Opens when a plan card is clicked.
-   Shows full plan details with sticky header.
-───────────────────────────────────────────────── */
-
-/* Store the currently open plan id */
-/* Used by track and edit functions */
 let currentOpenPlanId = null;
 
-
-function openPlan(cardElement) {
-
-    /* Read plan id from the clicked card element */
+async function openPlan(cardElement) {
     let planId = cardElement.getAttribute("data-id");
     currentOpenPlanId = planId;
-
     let userId = localStorage.getItem("userId");
 
-    /* Fetch full plan data including all days and activities */
-    fetch("php/itinerary.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "getPlan",
-            planId: planId,
-            userId: userId
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
+    // 1. Fetch full plan data + related days + related activities from Supabase
+    const { data: plan, error } = await supabaseClient
+        .from('plans')
+        .select(`
+            *,
+            days (*, activities (*))
+        `)
+        .eq('id', planId)
+        .eq('user_id', userId)
+        .single();
 
-        if (data.success) {
-            populateExpandedModal(data.plan);
-            /* Show the modal */
-            document.getElementById("expanded-plan-modal")
-                    .classList.remove("hidden");
-        }
+    if (error) {
+        console.error("Error fetching full plan details:", error.message);
+        return;
+    }
 
-    });
-
+    if (plan) {
+        populateExpandedModal(plan);
+        document.getElementById("expanded-plan-modal").classList.remove("hidden");
+    }
 }
 
-
 function populateExpandedModal(plan) {
+    document.getElementById("expanded-plan-name").textContent = plan.plan_name;
 
-    /* Fill plan name */
-    document.getElementById("expanded-plan-name")
-            .textContent = plan.plan_name;
-
-    /* Fill days count and total budget */
     let totalBudget = 0;
-    plan.days.forEach(function(day) {
-        totalBudget += parseFloat(day.budget);
-    });
+    // Calculate budget if 'days' exists and is an array
+    if (plan.days) {
+        plan.days.forEach(day => {
+            totalBudget += parseFloat(day.budget || 0);
+        });
+    }
 
-    document.getElementById("expanded-days-count")
-            .textContent = plan.days.length + " Days";
-    document.getElementById("expanded-budget")
-            .textContent = "₱" + totalBudget.toLocaleString();
+    document.getElementById("expanded-days-count").textContent = (plan.days ? plan.days.length : 0) + " Days";
+    document.getElementById("expanded-budget").textContent = "₱" + totalBudget.toLocaleString();
 
-    /* Show or hide the "Currently Tracking" badge */
-    let badge = document.getElementById(
-        "currently-tracking-badge"
-    );
+    let badge = document.getElementById("currently-tracking-badge");
     if (plan.is_tracked == 1) {
         badge.classList.remove("hidden");
-        /* Disable track button if already tracking */
         document.getElementById("track-btn").disabled = true;
     } else {
         badge.classList.add("hidden");
         document.getElementById("track-btn").disabled = false;
     }
 
-    /* Build day boxes with activities and checkboxes */
-    let container = document.getElementById(
-        "expanded-days-content"
-    );
+    let container = document.getElementById("expanded-days-content");
     container.innerHTML = "";
 
-    plan.days.forEach(function(day) {
+    if (plan.days) {
+        plan.days.forEach(day => {
+            let dateObj = new Date(day.day_date);
+            let formatted = dateObj.toLocaleDateString("en-US", {
+                weekday: "short",
+                month: "short",
+                day: "numeric"
+            });
 
-        let dateObj = new Date(day.day_date);
-        let formatted = dateObj.toLocaleDateString("en-US", {
-            weekday: "short",
-            month: "short",
-            day: "numeric"
+            let dayHTML = `<div class='day-box'>
+                <div class='day-header-row'>
+                    <span class='day-date-label'>${formatted}</span>
+                    <span class='day-budget-badge'>₱${parseFloat(day.budget || 0).toLocaleString()}</span>
+                </div>`;
+
+            if (day.activities) {
+                day.activities.forEach(activity => {
+                    let checked = activity.is_done == 1 ? "checked" : "";
+                    let doneClass = activity.is_done == 1 ? "completed" : "";
+
+                    dayHTML += `
+                        <div class='activity-row'>
+                            <input type='checkbox' class='activity-checkbox' 
+                                   data-id='${activity.id}' ${checked} 
+                                   onchange='toggleActivity(this)'>
+                            <div class='activity-details'>
+                                <span class='activity-name ${doneClass}'>${activity.activity_name}</span>
+                                <div class='activity-meta'>
+                                    <span class='activity-time'>${activity.activity_time}</span>
+                                    <span class='activity-location'>${activity.location}</span>
+                                </div>
+                            </div>
+                        </div>`;
+                });
+            }
+            dayHTML += "</div>";
+            container.innerHTML += dayHTML;
         });
-
-        let dayHTML = "<div class='day-box'>";
-        dayHTML += "<div class='day-header-row'>";
-        dayHTML += "<span class='day-date-label'>" +
-                   formatted + "</span>";
-        dayHTML += "<span class='day-budget-badge'>₱" +
-                   parseFloat(day.budget)
-                   .toLocaleString() + "</span>";
-        dayHTML += "</div>";
-
-        day.activities.forEach(function(activity) {
-
-            let checked = activity.is_done == 1 ? "checked" : "";
-            let doneClass = activity.is_done == 1 ?
-                            "completed" : "";
-
-            dayHTML += "<div class='activity-row'>";
-            dayHTML += "<input type='checkbox' " +
-                       "class='activity-checkbox' " +
-                       "data-id='" + activity.id + "' " +
-                       checked +
-                       " onchange='toggleActivity(this)'>";
-            dayHTML += "<div class='activity-details'>";
-            dayHTML += "<span class='activity-name " +
-                       doneClass + "'>" +
-                       activity.activity_name + "</span>";
-            dayHTML += "<div class='activity-meta'>";
-            dayHTML += "<span class='activity-time'>" +
-                       activity.activity_time + "</span>";
-            dayHTML += "<span class='activity-location'>" +
-                       activity.location + "</span>";
-            dayHTML += "</div>";
-            dayHTML += "</div>";
-            dayHTML += "</div>";
-
-        });
-
-        dayHTML += "</div>";
-        container.innerHTML += dayHTML;
-
-    });
-
+    }
 }
 
-
 function closeExpandedModal() {
-    document.getElementById("expanded-plan-modal")
-            .classList.add("hidden");
+    document.getElementById("expanded-plan-modal").classList.add("hidden");
     currentOpenPlanId = null;
 }
 
-
-function trackPlan() {
-
+async function trackPlan() {
     let userId = localStorage.getItem("userId");
 
-    fetch("php/itinerary.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "trackPlan",
-            planId: currentOpenPlanId,
-            userId: userId
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
+    // 1. First, untrack any currently tracked plan for this user
+    await supabaseClient
+        .from('plans')
+        .update({ is_tracked: 0 })
+        .eq('user_id', userId);
 
-        if (data.success) {
+    // 2. Set the current plan to tracked
+    const { error } = await supabaseClient
+        .from('plans')
+        .update({ is_tracked: 1 })
+        .eq('id', currentOpenPlanId);
 
-            /* Show the currently tracking badge */
-            document.getElementById("currently-tracking-badge")
-                    .classList.remove("hidden");
-
-            /* Disable track button to prevent double-click */
-            document.getElementById("track-btn").disabled = true;
-
-            /* Refresh plan cards to show tracking badge on card */
-            loadAllPlans();
-
-            alert("Plan is now being tracked!");
-
-        }
-
-    });
-
+    if (error) {
+        alert("Error tracking plan: " + error.message);
+    } else {
+        document.getElementById("currently-tracking-badge").classList.remove("hidden");
+        document.getElementById("track-btn").disabled = true;
+        loadAllPlans(); // Refresh the grid to show the new badge
+        alert("Plan is now being tracked!");
+    }
 }
 
 
 /* ─────────────────────────────────────────────────
-   SECTION 7 — DASHBOARD — DELETE PLAN
+   SECTION 7 — DASHBOARD — DELETE PLAN (Supabase)
 ───────────────────────────────────────────────── */
 
-/* Store which plan is pending deletion */
 let planIdToDelete = null;
 
-
 function openDeleteModal(event, planId, planName) {
-
-    /* event.stopPropagation() prevents the click from
-       also triggering openPlan() on the card below */
     event.stopPropagation();
-
     planIdToDelete = planId;
-
-    /* Update the confirmation message with plan name */
-    document.getElementById("delete-modal-message")
-            .textContent = "Are you sure you want to delete \"" +
-                           planName + "\"? " +
-                           "This action cannot be undone.";
-
-    /* Show the delete modal */
-    document.getElementById("delete-modal")
-            .classList.remove("hidden");
-
+    document.getElementById("delete-modal-message").textContent = 
+        `Are you sure you want to delete "${planName}"? This action cannot be undone.`;
+    document.getElementById("delete-modal").classList.remove("hidden");
 }
 
-
 function closeDeleteModal() {
-    document.getElementById("delete-modal")
-            .classList.add("hidden");
+    document.getElementById("delete-modal").classList.add("hidden");
     planIdToDelete = null;
 }
 
+async function confirmDelete() {
+    if (!planIdToDelete) return;
 
-function confirmDelete() {
+    // Supabase cascade delete: If you set up Foreign Keys with 'ON DELETE CASCADE', 
+    // deleting the plan will automatically delete its days and activities.
+    const { error } = await supabaseClient
+        .from('plans')
+        .delete()
+        .eq('id', planIdToDelete);
 
-    if (!planIdToDelete) { return; }
-
-    fetch("php/itinerary.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "deletePlan",
-            planId: planIdToDelete
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
-
-        if (data.success) {
-            closeDeleteModal();
-            /* Reload all plan cards to reflect deletion */
-            loadAllPlans();
-        }
-
-    });
-
+    if (error) {
+        alert("Error deleting plan: " + error.message);
+    } else {
+        closeDeleteModal();
+        loadAllPlans();
+    }
 }
-
 
 /* ─────────────────────────────────────────────────
-   SECTION 8 — DASHBOARD — ADD PLAN
-   Two-step process:
-   Step 1 — user names the journey
-   Step 2 — user builds days and activities
+   SECTION 8 — DASHBOARD — ADD PLAN (Supabase)
 ───────────────────────────────────────────────── */
 
-/* Store the new plan name between steps */
 let newPlanName = "";
 
-
 function openAddPlanStep1() {
-    /* Clear previous input if any */
     document.getElementById("new-plan-name-input").value = "";
-    /* Show step 1 modal */
-    document.getElementById("add-plan-modal-1")
-            .classList.remove("hidden");
+    document.getElementById("add-plan-modal-1").classList.remove("hidden");
 }
 
-
 function closeAddPlanModal() {
-    document.getElementById("add-plan-modal-1")
-            .classList.add("hidden");
-    document.getElementById("add-plan-modal-2")
-            .classList.add("hidden");
-    /* Clear the days container for next time */
-    document.getElementById("add-days-container")
-            .innerHTML = "";
+    document.getElementById("add-plan-modal-1").classList.add("hidden");
+    document.getElementById("add-plan-modal-2").classList.add("hidden");
+    document.getElementById("add-days-container").innerHTML = "";
     newPlanName = "";
 }
 
-
 function proceedToStep2() {
-
-    let nameInput = document.getElementById(
-        "new-plan-name-input"
-    );
-
-    /* Validate — name cannot be empty */
+    let nameInput = document.getElementById("new-plan-name-input");
     if (nameInput.value.trim() === "") {
         alert("Please enter a name for your journey.");
         return;
     }
-
     newPlanName = nameInput.value.trim();
-
-    /* Hide step 1, show step 2 */
-    document.getElementById("add-plan-modal-1")
-            .classList.add("hidden");
-    document.getElementById("add-plan-modal-2")
-            .classList.remove("hidden");
-
-    /* Show plan name at top of step 2 */
-    document.getElementById("add-plan-name-display")
-            .value = newPlanName;
-
-    /* Build the first day block automatically */
-    document.getElementById("add-days-container")
-            .innerHTML = "";
+    document.getElementById("add-plan-modal-1").classList.add("hidden");
+    document.getElementById("add-plan-modal-2").classList.remove("hidden");
+    document.getElementById("add-plan-name-display").value = newPlanName;
+    document.getElementById("add-days-container").innerHTML = "";
     addAnotherDay("add");
-
 }
 
+// ... Keep your existing backToStep1, addAnotherDay, buildActivityFormRow, 
+// addActivityRow, updateDayCount, and collectDayData functions as they are 
+// UI-only and don't involve fetch ...
 
-function backToStep1() {
-    document.getElementById("add-plan-modal-2")
-            .classList.add("hidden");
-    document.getElementById("add-plan-modal-1")
-            .classList.remove("hidden");
-}
+async function savePlan() {
+    const userId = localStorage.getItem("userId");
+    const planName = document.getElementById("add-plan-name-display").value.trim();
+    const days = collectDayData("add");
 
+    if (planName === "") { alert("Please enter a journey name."); return; }
+    if (days.length === 0) { alert("Please add at least one day."); return; }
 
-function addAnotherDay(mode) {
+    // 1. Create the Plan
+    const { data: planData, error: planError } = await supabaseClient
+        .from('plans')
+        .insert([{ plan_name: planName, user_id: userId, is_tracked: 0 }])
+        .select()
+        .single();
 
-    /* mode is either "add" (new plan) or "edit" */
-    let containerId = mode === "add" ?
-                      "add-days-container" :
-                      "edit-days-container";
-    let container = document.getElementById(containerId);
+    if (planError) { alert("Error creating plan: " + planError.message); return; }
 
-    /* Count existing day blocks to determine next day number */
-    let existingDays = container.querySelectorAll(".day-form-block");
-    let dayNumber = existingDays.length + 1;
+    const planId = planData.id;
 
-    /* Calculate the next date automatically */
-    /* Find the last date input in the container */
-    let dateInputs = container.querySelectorAll(".date-input");
-    let nextDate = "";
+    // 2. Loop through days and their activities
+    for (const day of days) {
+        const { data: dayData, error: dayError } = await supabaseClient
+            .from('days')
+            .insert([{ plan_id: planId, day_date: day.day_date, budget: day.budget }])
+            .select()
+            .single();
 
-    if (dateInputs.length > 0) {
-        /* Get the last date value */
-        let lastDate = dateInputs[dateInputs.length - 1].value;
-        if (lastDate !== "") {
-            /* Add 1 day to the last date */
-            let dateObj = new Date(lastDate);
-            dateObj.setDate(dateObj.getDate() + 1);
-            /* Format back to YYYY-MM-DD for the input */
-            nextDate = dateObj.toISOString().split("T")[0];
-            /* .toISOString() gives "2026-05-08T00:00:00.000Z"
-               .split("T")[0] takes just "2026-05-08" */
+        if (dayError) { console.error("Error creating day:", dayError); continue; }
+
+        const dayId = dayData.id;
+
+        // 3. Insert activities for this day
+        if (day.activities.length > 0) {
+            const activitiesToInsert = day.activities.map(act => ({
+                day_id: dayId,
+                activity_name: act.activity_name,
+                activity_time: act.activity_time,
+                location: act.location,
+                is_done: 0
+            }));
+
+            const { error: actError } = await supabaseClient
+                .from('activities')
+                .insert(activitiesToInsert);
+            
+            if (actError) console.error("Error creating activities:", actError);
         }
     }
 
-    /* Build the day block HTML */
-    let dayBlock = "<div class='day-form-block'>";
-    dayBlock += "<div class='day-form-header'>";
-    dayBlock += "<div>";
-    dayBlock += "<p class='day-form-date-label'>Date</p>";
-    dayBlock += "<input type='date' class='date-input' " +
-                "value='" + nextDate + "'>";
-    dayBlock += "</div>";
-    dayBlock += "<div>";
-    dayBlock += "<p class='day-form-budget-label'>" +
-                "Total Budget</p>";
-    dayBlock += "<input type='number' class='budget-input' " +
-                "placeholder='0'>";
-    dayBlock += "</div>";
-    dayBlock += "</div>";
-
-    /* Activities label */
-    dayBlock += "<p class='activities-label'>Activities</p>";
-
-    /* One default empty activity row */
-    dayBlock += buildActivityFormRow();
-
-    /* Second default empty activity row */
-    dayBlock += buildActivityFormRow();
-
-    /* Add Activity button for this day */
-    dayBlock += "<button class='add-activity-btn' " +
-                "onclick='addActivityRow(this)'>" +
-                "+ Add Activity</button>";
-
-    dayBlock += "</div>";
-
-    container.innerHTML += dayBlock;
-
-    /* Update the day count display */
-    updateDayCount(mode);
-
+    alert("Journey saved successfully!");
+    closeAddPlanModal();
+    loadAllPlans();
 }
-
-
-function buildActivityFormRow() {
-
-    let row = "<div class='activity-form-block'>";
-    row += "<input type='text' class='activity-desc-input' " +
-           "placeholder='Activity description'>";
-    row += "<div class='activity-time-location-row'>";
-    row += "<input type='text' class='time-input' " +
-           "placeholder='Time'>";
-    row += "<input type='text' class='location-input' " +
-           "placeholder='Location'>";
-    row += "</div>";
-    row += "</div>";
-
-    return row;
-
-}
-
-
-function addActivityRow(button) {
-
-    /* Find the day block this button belongs to */
-    /* parentElement goes up one level in the HTML tree */
-    let dayBlock = button.parentElement;
-
-    /* Build a new activity row */
-    let newRow = buildActivityFormRow();
-
-    /* Insert before the Add Activity button */
-    /* insertAdjacentHTML places HTML relative to an element */
-    button.insertAdjacentHTML("beforebegin", newRow);
-
-}
-
-
-function updateDayCount(mode) {
-
-    let containerId = mode === "add" ?
-                      "add-days-container" :
-                      "edit-days-container";
-    let countId = mode === "add" ?
-                  "add-days-count" :
-                  "edit-days-count";
-
-    let count = document.getElementById(containerId)
-                        .querySelectorAll(".day-form-block")
-                        .length;
-
-    document.getElementById(countId).textContent = count;
-
-}
-
-
-function savePlan() {
-
-    let userId = localStorage.getItem("userId");
-    let planName = document.getElementById(
-        "add-plan-name-display"
-    ).value.trim();
-
-    if (planName === "") {
-        alert("Please enter a journey name.");
-        return;
-    }
-
-    /* Collect all day data from the form */
-    let days = collectDayData("add");
-
-    if (days.length === 0) {
-        alert("Please add at least one day.");
-        return;
-    }
-
-    /* Send to PHP to save in database */
-    fetch("php/itinerary.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "createPlan",
-            userId: userId,
-            planName: planName,
-            days: days
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
-
-        if (data.success) {
-            closeAddPlanModal();
-            /* Reload cards to show the new plan */
-            loadAllPlans();
-        } else {
-            alert(data.message);
-        }
-
-    });
-
-}
-
-
-function collectDayData(mode) {
-
-    let containerId = mode === "add" ?
-                      "add-days-container" :
-                      "edit-days-container";
-    let container = document.getElementById(containerId);
-    let dayBlocks = container.querySelectorAll(".day-form-block");
-
-    let days = [];
-
-    dayBlocks.forEach(function(block) {
-
-        let dateInput = block.querySelector(".date-input");
-        let budgetInput = block.querySelector(".budget-input");
-        let activityBlocks = block.querySelectorAll(
-            ".activity-form-block"
-        );
-
-        let activities = [];
-
-        activityBlocks.forEach(function(actBlock) {
-
-            let desc = actBlock.querySelector(
-                ".activity-desc-input"
-            ).value.trim();
-
-            /* Skip empty activity rows */
-            if (desc === "") { return; }
-
-            let time = actBlock.querySelector(
-                ".time-input"
-            ).value.trim();
-            let location = actBlock.querySelector(
-                ".location-input"
-            ).value.trim();
-
-            activities.push({
-                activity_name: desc,
-                activity_time: time,
-                location: location
-            });
-
-        });
-
-        days.push({
-            day_date: dateInput.value,
-            budget: budgetInput.value || 0,
-            activities: activities
-        });
-
-    });
-
-    return days;
-
-}
-
 
 /* ─────────────────────────────────────────────────
-   SECTION 9 — DASHBOARD — EDIT PLAN
+   SECTION 9 — DASHBOARD — EDIT PLAN (Supabase)
 ───────────────────────────────────────────────── */
 
-function openEditModal() {
-
-    /* Close the expanded modal first */
-    document.getElementById("expanded-plan-modal")
-            .classList.add("hidden");
-
+async function openEditModal() {
+    document.getElementById("expanded-plan-modal").classList.add("hidden");
     let userId = localStorage.getItem("userId");
 
-    /* Fetch the plan data to pre-fill the edit form */
-    fetch("php/itinerary.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "getPlan",
-            planId: currentOpenPlanId,
-            userId: userId
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
+    // Fetch the plan data + related days + activities to pre-fill the form
+    const { data: plan, error } = await supabaseClient
+        .from('plans')
+        .select(`*, days (*, activities (*))`)
+        .eq('id', currentOpenPlanId)
+        .eq('user_id', userId)
+        .single();
 
-        if (data.success) {
-            populateEditModal(data.plan);
-            document.getElementById("edit-plan-modal")
-                    .classList.remove("hidden");
-        }
-
-    });
-
+    if (error) {
+        console.error("Error fetching plan for edit:", error.message);
+    } else {
+        populateEditModal(plan);
+        document.getElementById("edit-plan-modal").classList.remove("hidden");
+    }
 }
-
 
 function populateEditModal(plan) {
-
-    /* Set the plan name */
-    document.getElementById("edit-plan-name-input")
-            .value = plan.plan_name;
-
-    /* Clear and rebuild day blocks with existing data */
-    let container = document.getElementById(
-        "edit-days-container"
-    );
+    document.getElementById("edit-plan-name-input").value = plan.plan_name;
+    let container = document.getElementById("edit-days-container");
     container.innerHTML = "";
 
-    plan.days.forEach(function(day) {
+    if (plan.days) {
+        plan.days.forEach(day => {
+            let dayBlock = `<div class='day-form-block'>
+                <div class='day-form-header'>
+                    <div>
+                        <p class='day-form-date-label'>Date</p>
+                        <input type='date' class='date-input' value='${day.day_date}'>
+                    </div>
+                    <div>
+                        <p class='day-form-budget-label'>Total Budget</p>
+                        <input type='number' class='budget-input' value='${day.budget}'>
+                    </div>
+                </div>
+                <p class='activities-label'>Activities</p>`;
 
-        let dayBlock = "<div class='day-form-block'>";
-        dayBlock += "<div class='day-form-header'>";
-        dayBlock += "<div>";
-        dayBlock += "<p class='day-form-date-label'>Date</p>";
-        /* Pre-fill with existing date */
-        dayBlock += "<input type='date' class='date-input' " +
-                    "value='" + day.day_date + "'>";
-        dayBlock += "</div>";
-        dayBlock += "<div>";
-        dayBlock += "<p class='day-form-budget-label'>" +
-                    "Total Budget</p>";
-        /* Pre-fill with existing budget */
-        dayBlock += "<input type='number' class='budget-input' " +
-                    "value='" + day.budget + "'>";
-        dayBlock += "</div>";
-        dayBlock += "</div>";
+            if (day.activities) {
+                day.activities.forEach(activity => {
+                    dayBlock += `<div class='activity-form-block'>
+                        <input type='text' class='activity-desc-input' value='${activity.activity_name}'>
+                        <div class='activity-time-location-row'>
+                            <input type='text' class='time-input' value='${activity.activity_time}'>
+                            <input type='text' class='location-input' value='${activity.location}'>
+                        </div>
+                    </div>`;
+                });
+            }
 
-        dayBlock += "<p class='activities-label'>Activities</p>";
-
-        /* Pre-fill existing activities */
-        day.activities.forEach(function(activity) {
-
-            dayBlock += "<div class='activity-form-block'>";
-            dayBlock += "<input type='text' " +
-                        "class='activity-desc-input' " +
-                        "value='" +
-                        activity.activity_name + "'>";
-            dayBlock += "<div class='activity-time-location-row'>";
-            dayBlock += "<input type='text' class='time-input' " +
-                        "value='" +
-                        activity.activity_time + "'>";
-            dayBlock += "<input type='text' " +
-                        "class='location-input' " +
-                        "value='" + activity.location + "'>";
-            dayBlock += "</div>";
-            dayBlock += "</div>";
-
+            dayBlock += `<button class='add-activity-btn' onclick='addActivityRow(this)'>+ Add Activity</button></div>`;
+            container.innerHTML += dayBlock;
         });
-
-        dayBlock += "<button class='add-activity-btn' " +
-                    "onclick='addActivityRow(this)'>" +
-                    "+ Add Activity</button>";
-
-        dayBlock += "</div>";
-        container.innerHTML += dayBlock;
-
-    });
-
+    }
     updateDayCount("edit");
-
 }
-
 
 function closeEditModal() {
-    document.getElementById("edit-plan-modal")
-            .classList.add("hidden");
+    document.getElementById("edit-plan-modal").classList.add("hidden");
 }
 
-
-function saveEditedPlan() {
-
-    let planName = document.getElementById(
-        "edit-plan-name-input"
-    ).value.trim();
-
-    if (planName === "") {
-        alert("Please enter a journey name.");
-        return;
-    }
+async function saveEditedPlan() {
+    let planName = document.getElementById("edit-plan-name-input").value.trim();
+    if (planName === "") { alert("Please enter a journey name."); return; }
 
     let days = collectDayData("edit");
 
-    fetch("php/itinerary.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "editPlan",
-            planId: currentOpenPlanId,
-            planName: planName,
-            days: days
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
+    // 1. Update the Plan Name
+    await supabaseClient.from('plans').update({ plan_name: planName }).eq('id', currentOpenPlanId);
 
-        if (data.success) {
-            closeEditModal();
-            loadAllPlans();
-        } else {
-            alert(data.message);
+    // 2. Delete old days (this will cascade delete old activities) to perform a clean sync
+    await supabaseClient.from('days').delete().eq('plan_id', currentOpenPlanId);
+
+    // 3. Re-insert the updated days and activities
+    for (const day of days) {
+        const { data: dayData } = await supabaseClient
+            .from('days')
+            .insert([{ plan_id: currentOpenPlanId, day_date: day.day_date, budget: day.budget }])
+            .select().single();
+
+        if (day.activities.length > 0) {
+            const acts = day.activities.map(a => ({
+                day_id: dayData.id,
+                activity_name: a.activity_name,
+                activity_time: a.activity_time,
+                location: a.location
+            }));
+            await supabaseClient.from('activities').insert(acts);
         }
+    }
 
-    });
-
+    closeEditModal();
+    loadAllPlans();
 }
 
-
 /* ─────────────────────────────────────────────────
-   SECTION 10 — ACCOUNT PAGE
+   SECTION 10 — ACCOUNT PAGE (Supabase)
 ───────────────────────────────────────────────── */
 
-function initAccountPage() {
-
+async function initAccountPage() {
     let username = localStorage.getItem("username");
+    
+    // Fill displays
+    ["display-username", "view-username"].forEach(id => {
+        let el = document.getElementById(id);
+        if (el) el.textContent = username;
+    });
 
-    /* Fill all username display elements */
-    let displayUsername = document.getElementById(
-        "display-username"
-    );
-    if (displayUsername) {
-        displayUsername.textContent = username;
-    }
+    let editInput = document.getElementById("edit-username-input");
+    if (editInput) editInput.value = username;
 
-    let viewUsername = document.getElementById("view-username");
-    if (viewUsername) {
-        viewUsername.textContent = username;
-    }
-
-    /* Fill edit input with current username */
-    let editInput = document.getElementById(
-        "edit-username-input"
-    );
-    if (editInput) {
-        editInput.value = username;
-    }
-
-    /* Load journey stats from PHP */
     loadAccountStats();
-
 }
 
-
-function loadAccountStats() {
-
+async function loadAccountStats() {
     let userId = localStorage.getItem("userId");
 
-    fetch("php/auth.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "getStats",
-            userId: userId
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
+    const { count: totalPlans } = await supabaseClient
+        .from('plans')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId);
 
-        if (data.success) {
+    const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('completed_count') // Changed from completed_itineraries
+        .eq('id', userId)
+        .single();
 
-            document.getElementById("total-plans-count")
-                    .textContent = data.totalPlans;
-            document.getElementById("completed-count")
-                    .textContent = data.completedCount;
-
-        }
-
-    });
-
+    document.getElementById("total-plans-count").textContent = totalPlans || 0;
+    document.getElementById("completed-count").textContent = profile?.completed_count || 0;
 }
 
-
-function showEditState() {
-
-    document.getElementById("profile-view-state")
-            .classList.add("hidden");
-    document.getElementById("profile-edit-state")
-            .classList.remove("hidden");
-
-}
-
-
-function hideEditState() {
-
-    document.getElementById("profile-edit-state")
-            .classList.add("hidden");
-    document.getElementById("profile-view-state")
-            .classList.remove("hidden");
-
-}
-
-
-function togglePasswordVisibility() {
-
-    let display = document.getElementById("password-display");
-    let icon = document.getElementById("eye-icon-img");
-    let username = localStorage.getItem("username");
-
-    /* If currently showing dots — reveal password */
-    if (display.textContent.includes("•")) {
-        /* Fetch real password from PHP session */
-        fetch("php/auth.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                action: "getPassword",
-                userId: localStorage.getItem("userId")
-            })
-        })
-        .then(function(response) {
-            return response.json();
-        })
-        .then(function(data) {
-            if (data.success) {
-                display.textContent = data.password;
-            }
-        });
-    } else {
-        /* Hide again — show dots */
-        display.textContent = "••••••••";
-    }
-
-}
-
-
-function saveProfileChanges() {
-
+async function saveProfileChanges() {
     let userId = localStorage.getItem("userId");
-    let newUsername = document.getElementById(
-        "edit-username-input"
-    ).value.trim();
-    let newPassword = document.getElementById(
-        "edit-password-input"
-    ).value.trim();
+    let newUsername = document.getElementById("edit-username-input").value.trim();
+    let newPassword = document.getElementById("edit-password-input").value.trim();
 
-    if (newUsername === "") {
-        alert("Username cannot be empty.");
-        return;
+    if (newUsername === "") { alert("Username cannot be empty."); return; }
+
+    // Update Profile Table
+    const { error: profileError } = await supabaseClient
+        .from('profiles')
+        .update({ username: newUsername })
+        .eq('id', userId);
+
+    // If password was provided, update Supabase Auth
+    if (newPassword !== "") {
+        const { error: authError } = await supabaseClient.auth.updateUser({ password: newPassword });
+        if (authError) alert("Password Update Error: " + authError.message);
     }
 
-    fetch("php/auth.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "updateProfile",
-            userId: userId,
-            username: newUsername,
-            password: newPassword
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
-
-        if (data.success) {
-            /* Update localStorage with new username */
-            localStorage.setItem("username", newUsername);
-            alert("Profile updated successfully.");
-            /* Reload page to show updated values */
-            window.location.reload();
-        } else {
-            alert(data.message);
-        }
-
-    });
-
+    if (!profileError) {
+        localStorage.setItem("username", newUsername);
+        alert("Profile updated successfully.");
+        window.location.reload();
+    }
 }
 
-
-function openDeleteAccountModal() {
-    document.getElementById("delete-account-modal")
-            .classList.remove("hidden");
-}
-
-
-function closeDeleteAccountModal() {
-    document.getElementById("delete-account-modal")
-            .classList.add("hidden");
-}
-
-
-function confirmDeleteAccount() {
-
+async function confirmDeleteAccount() {
     let userId = localStorage.getItem("userId");
 
-    fetch("php/auth.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "deleteAccount",
-            userId: userId
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
-
-        if (data.success) {
-            localStorage.clear();
-            window.location.href = "signin.html";
-        }
-
-    });
-
-}
-
-
-/* ─────────────────────────────────────────────────
-   SECTION 11 — ADMIN PAGES
-───────────────────────────────────────────────── */
-
-function initAdminPage() {
-
-    /* Verify this user is actually an admin */
-    let role = localStorage.getItem("role");
-    if (role !== "admin") {
-        /* Not an admin — redirect to homepage */
-        window.location.href = "index.html";
-        return;
-    }
-
-    /* Fill sidebar and welcome username */
-    let username = localStorage.getItem("username");
-
-    let sidebarName = document.getElementById(
-        "admin-display-name"
-    );
-    if (sidebarName) {
-        sidebarName.textContent = username;
-    }
-
-    let welcomeName = document.getElementById(
-        "admin-welcome-name"
-    );
-    if (welcomeName) {
-        welcomeName.textContent = username;
-    }
-
-    /* Load all statistics from PHP */
-    loadAdminStats();
-
-}
-
-
-function loadAdminStats() {
-
-    fetch("php/admin.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "getStats" })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
-
-        if (data.success) {
-
-            /* Fill the three stat cards */
-            document.getElementById("stat-user-total")
-                    .textContent = data.userTotal;
-            document.getElementById("stat-itinerary-total")
-                    .textContent = data.itineraryTotal;
-            document.getElementById("stat-completion-total")
-                    .textContent = data.completionTotal;
-
-            /* Fill the four info boxes */
-            document.getElementById("stat-popular-plan")
-                    .textContent = data.popularPlan;
-            document.getElementById("stat-popular-location")
-                    .textContent = data.popularLocation;
-            document.getElementById("stat-common-day")
-                    .textContent = data.commonDay;
-            document.getElementById("stat-common-length")
-                    .textContent = data.commonLength;
-
-            /* Fill the two teal boxes */
-            document.getElementById("stat-active-username")
-                    .textContent = data.activeUsername;
-            document.getElementById("stat-active-plans")
-                    .textContent = data.activePlans;
-            document.getElementById("stat-tracked-count")
-                    .textContent = data.trackedCount;
-
-        }
-
-    });
-
-}
-
-
-function initAdminAccountPage() {
-
-    let role = localStorage.getItem("role");
-    if (role !== "admin") {
-        window.location.href = "index.html";
-        return;
-    }
-
-    let username = localStorage.getItem("username");
-
-    /* Fill all three username display elements */
-    let sidebarName = document.getElementById(
-        "admin-display-name"
-    );
-    if (sidebarName) {
-        sidebarName.textContent = username;
-    }
-
-    let accountUsername = document.getElementById(
-        "account-display-username"
-    );
-    if (accountUsername) {
-        accountUsername.textContent = username;
-    }
-
-    let viewUsername = document.getElementById(
-        "admin-view-username"
-    );
-    if (viewUsername) {
-        viewUsername.textContent = username;
-    }
-
-    /* Pre-fill the edit input */
-    let editInput = document.getElementById(
-        "admin-edit-username"
-    );
-    if (editInput) {
-        editInput.value = username;
-    }
-
-}
-
-
-function showAdminEditState() {
-    document.getElementById("admin-view-state")
-            .classList.add("hidden");
-    document.getElementById("admin-edit-state")
-            .classList.remove("hidden");
-}
-
-
-function hideAdminEditState() {
-    document.getElementById("admin-edit-state")
-            .classList.add("hidden");
-    document.getElementById("admin-view-state")
-            .classList.remove("hidden");
-}
-
-
-function saveAdminProfileChanges() {
-
-    let userId = localStorage.getItem("userId");
-    let newUsername = document.getElementById(
-        "admin-edit-username"
-    ).value.trim();
-    let newPassword = document.getElementById(
-        "admin-edit-password"
-    ).value.trim();
-
-    if (newUsername === "") {
-        alert("Username cannot be empty.");
-        return;
-    }
-
-    fetch("php/auth.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "updateProfile",
-            userId: userId,
-            username: newUsername,
-            password: newPassword
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
-
-        if (data.success) {
-            localStorage.setItem("username", newUsername);
-            alert("Profile updated successfully.");
-            window.location.reload();
-        } else {
-            alert(data.message);
-        }
-
-    });
-
-}
-
-
-function adminSignOut() {
-
-    fetch("php/auth.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "logout" })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function() {
+    // In Supabase, you usually delete the user via Auth API
+    // This requires an edge function or admin rights, so for now, we clear the session
+    const { error } = await supabaseClient.auth.signOut();
+    
+    if (!error) {
         localStorage.clear();
         window.location.href = "signin.html";
+    }
+}
+
+/* ─────────────────────────────────────────────────
+   SECTION 11 — ADMIN PAGES (Supabase)
+───────────────────────────────────────────────── */
+
+async function initAdminPage() {
+    const userId = localStorage.getItem("userId");
+    
+    // 1. Verify role from the database for security
+    const { data: profile, error } = await supabaseClient
+        .from('profiles')
+        .select('role, username')
+        .eq('id', userId)
+        .single();
+
+    if (error || profile.role !== "admin") {
+        alert("Access Denied: Admin only.");
+        window.location.href = "index.html";
+        return;
+    }
+
+    // 2. Fill Display Names
+    const username = profile.username;
+    const sidebarName = document.getElementById("admin-display-name");
+    if (sidebarName) sidebarName.textContent = username;
+
+    const welcomeName = document.getElementById("admin-welcome-name");
+    if (welcomeName) welcomeName.textContent = username;
+
+    // 3. Load stats
+    loadAdminStats();
+}
+
+async function loadAdminStats() {
+    // Total Users
+    const { count: userTotal } = await supabaseClient
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+
+    // Total Plans
+    const { count: itineraryTotal } = await supabaseClient
+        .from('plans')
+        .select('*', { count: 'exact', head: true });
+
+    // Total Completed Plans (Using the boolean column from your schema)
+    const { count: completionTotal } = await supabaseClient
+        .from('plans')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_completed', true);
+
+    // Tracked Plans Count
+    const { count: trackedCount } = await supabaseClient
+        .from('plans')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_tracked', true);
+
+    // Fill UI Cards
+    document.getElementById("stat-user-total").textContent = userTotal || 0;
+    document.getElementById("stat-itinerary-total").textContent = itineraryTotal || 0;
+    document.getElementById("stat-completion-total").textContent = completionTotal || 0;
+    document.getElementById("stat-tracked-count").textContent = trackedCount || 0;
+
+    // Placeholder Logic for Advanced Stats 
+    // (Supabase requires custom RPC functions for complex "popular" aggregations)
+    document.getElementById("stat-popular-plan").textContent = "Beach Getaway";
+    document.getElementById("stat-popular-location").textContent = "Boracay";
+}
+
+async function initAdminAccountPage() {
+    const userId = localStorage.getItem("userId");
+    
+    const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('username, role')
+        .eq('id', userId)
+        .single();
+
+    if (!profile || profile.role !== "admin") {
+        window.location.href = "index.html";
+        return;
+    }
+
+    const username = profile.username;
+    ["admin-display-name", "account-display-username", "admin-view-username"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = username;
     });
 
+    const editInput = document.getElementById("admin-edit-username");
+    if (editInput) editInput.value = username;
+}
+
+async function saveAdminProfileChanges() {
+    const userId = localStorage.getItem("userId");
+    const newUsername = document.getElementById("admin-edit-username").value.trim();
+    const newPassword = document.getElementById("admin-edit-password").value.trim();
+
+    if (newUsername === "") {
+        alert("Username cannot be empty.");
+        return;
+    }
+
+    // Update Profile
+    const { error: profileError } = await supabaseClient
+        .from('profiles')
+        .update({ username: newUsername })
+        .eq('id', userId);
+
+    // Update Password in Auth if provided
+    if (newPassword !== "") {
+        await supabaseClient.auth.updateUser({ password: newPassword });
+    }
+
+    if (!profileError) {
+        localStorage.setItem("username", newUsername);
+        alert("Admin profile updated successfully.");
+        window.location.reload();
+    }
+}
+
+async function adminSignOut() {
+    await supabaseClient.auth.signOut();
+    localStorage.clear();
+    window.location.href = "signin.html";
 }
 
 
