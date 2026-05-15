@@ -1,3 +1,8 @@
+const SUPABASE_URL = 'https://vptvzuzydcweouodwvuy.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_m1uCdwzt48lWw_WvGg23ag_nucwaJnz'; // Copy from Supabase Dashboard
+
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 /* ═══════════════════════════════════════════════════
    JOURNIT — script.js
    One JavaScript file for all pages.
