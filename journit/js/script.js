@@ -158,7 +158,7 @@ async function signUp() {
     }
 
 // This replaces the old PHP fetch logic
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await supabaseClient.auth.signUp({
         email: username, // Note: Supabase expects an email format
         password: password,
     });
