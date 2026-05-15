@@ -1,6 +1,14 @@
 const SUPABASE_URL = 'https://vptvzuzydcweouodwvuy.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_m1uCdwzt48lWw_WvGg23ag_nucwaJnz';
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Use 'let' so we can define it safely
+let supabaseClient;
+
+if (typeof supabase !== 'undefined') {
+    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+} else {
+    console.error("Supabase library not loaded! Check your script tags in the HTML.");
+}
 /* ═══════════════════════════════════════════════════
    JOURNIT — script.js
    One JavaScript file for all pages.
