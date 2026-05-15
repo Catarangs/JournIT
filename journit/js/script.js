@@ -142,7 +142,7 @@ function goToSlide(index, slides, dots) {
    All communicate with php/auth.php.
 ───────────────────────────────────────────────── */
 
-function signUp() {
+async function signUp() {
 
     /* Read values from the input fields */
     let username = document.getElementById("username").value.trim();
@@ -157,37 +157,24 @@ function signUp() {
         /* return stops the function from continuing */
     }
 
-    /* Send sign up request to PHP */
-    fetch("php/auth.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "signup",
-            username: username,
-            password: password
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
-
-        if (data.success) {
-            /* Account created — redirect to sign in */
-            alert("Account created! Please sign in.");
-            window.location.href = "signin.html";
-        } else {
-            /* PHP returned an error message */
-            alert(data.message);
-        }
-
+// This replaces the old PHP fetch logic
+    const { data, error } = await supabase.auth.signUp({
+        email: username, // Note: Supabase expects an email format
+        password: password,
     });
+
+    if (error) {
+        alert("Error: " + error.message);
+    } else {
+        alert("Account created! Please check your email for a confirmation link.");
+        window.location.href = "signin.html";
+    }
 
 }
 
 
-function signIn() {
-
+// Add 'async' before the function name
+async function signIn() {
     let username = document.getElementById("username").value.trim();
     let password = document.getElementById("password").value.trim();
 
@@ -196,41 +183,22 @@ function signIn() {
         return;
     }
 
-    fetch("php/auth.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            action: "signin",
-            username: username,
-            password: password
-        })
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
-
-        if (data.success) {
-
-            /* Save user info to localStorage */
-            /* This persists across page navigations */
-            localStorage.setItem("username", data.username);
-            localStorage.setItem("role", data.role);
-            localStorage.setItem("userId", data.userId);
-
-            /* Redirect based on role */
-            if (data.role === "admin") {
-                window.location.href = "admin.html";
-            } else {
-                window.location.href = "index.html";
-            }
-
-        } else {
-            alert(data.message);
-        }
-
+    // This replaces the old fetch("php/auth.php"...) logic
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: username, // Your form uses 'username' as the ID for the email field
+        password: password,
     });
 
+    if (error) {
+        alert("Login Failed: " + error.message);
+    } else {
+        /* Save user info to localStorage so the dashboard knows who is logged in */
+        localStorage.setItem("username", data.user.email);
+        localStorage.setItem("userId", data.user.id);
+        
+        alert("Welcome back!");
+        window.location.href = "index.html"; // Redirect to your homepage/dashboard
+    }
 }
 
 
