@@ -1,0 +1,2405 @@
+/* ═══════════════════════════════════════════════════
+   JOURNIT STYLESHEET
+   Written in sections, top to bottom:
+   1. Variables and Reset
+   2. Shared / Global styles
+   3. Auth pages (signin, signup)
+   4. Header
+   5. Hero slideshow
+   6. Homepage nav cards and plans section
+   7. Dashboard
+   8. Account page
+   9. Modals
+   10. Footer
+═══════════════════════════════════════════════════ */
+
+
+/* ─────────────────────────────────────────────────
+   SECTION 1 — VARIABLES AND RESET
+   Variables: define colors and fonts once, use everywhere
+   Reset: remove browser default styles so all browsers
+   start from the same clean baseline
+───────────────────────────────────────────────── */
+
+/* CSS variables defined on :root are available everywhere */
+:root {
+    --color-primary:     #1B4D3E; /* dark forest green */
+    --color-accent:      #E07B54; /* coral / salmon */
+    --color-bg:          #F5F0E8; /* warm off-white background */
+    --color-white:       #FFFFFF; /* pure white for cards */
+    --color-text:        #1B2A22; /* dark text */
+    --color-text-light:  #6B7C74; /* lighter grey-green text */
+    --color-border:      #E0D9CE; /* subtle border color */
+    --color-teal-light:  #E1F5EE; /* light teal for stat box */
+    --color-coral-light: #FDECEA; /* light coral for stat box */
+    --font-main: 'Georgia', serif; /* heading font — elegant serif */
+    --font-body: 'Arial', sans-serif; /* body font — clean readable */
+    --radius:    12px; /* standard border radius for cards */
+    --shadow:    0 2px 16px rgba(0, 0, 0, 0.08); /* soft card shadow */
+}
+
+/* Universal selector: applies to EVERY element on every page */
+/* box-sizing: border-box makes padding count inside the width */
+/* This prevents elements from growing larger than expected */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+/* *::before and *::after targets invisible pseudo-elements
+   that browsers sometimes add — we reset those too */
+
+/* Base styles for the html and body elements */
+html {
+    /* scroll-behavior: smooth makes page scroll animate
+       instead of jumping when scrollToPlans() is called */
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: var(--font-body);
+    color: var(--color-text);
+    /* min-height: 100vh means body is at least the full
+       screen height — prevents footer from floating up
+       on pages with little content */
+    min-height: 100vh;
+}
+
+/* The hidden class — used on EVERY page and EVERY modal */
+/* When JS wants to hide something, it adds this class */
+/* When JS wants to show something, it removes this class */
+.hidden {
+    display: none !important;
+}
+/* !important makes sure this rule wins over any other
+   display rule that might be set on the same element */
+
+/* Remove default bullet styles from all lists */
+ul {
+    list-style: none;
+}
+
+/* Remove default underline and color from links */
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* Make images never wider than their container */
+img {
+    max-width: 100%;
+    display: block;
+}
+
+
+/* ─────────────────────────────────────────────────
+   SECTION 2 — AUTH PAGES
+   Styles for signin.html and signup.html.
+   Both pages use the same class names so both
+   are styled by these same rules automatically.
+───────────────────────────────────────────────── */
+
+/* AUTH BODY: the warm off-white background */
+/* display: flex and flex-direction: column lets us
+   push the footer to the bottom using margin-top: auto */
+.auth-body {
+    background-color: var(--color-bg);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* AUTH WRAPPER: takes up all available vertical space */
+/* This pushes the footer down to the bottom */
+/* display: flex + align/justify center centers the card */
+.auth-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+}
+
+/* AUTH CARD: the white centered card */
+.auth-card {
+    background-color: var(--color-white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 40px;
+    width: 100%;
+    /* max-width prevents the card from getting too wide
+       on large screens — keeps it a comfortable form size */
+    max-width: 420px;
+}
+
+/* LOGO AREA: logo image and brand name side by side */
+.auth-logo-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 28px;
+    /* justify-content: center centers the logo in the card */
+    justify-content: center;
+}
+
+/* AUTH LOGO IMAGE: small logo beside brand name */
+.auth-logo-img {
+    width: 36px;
+    height: 36px;
+    /* object-fit: contain keeps the image proportions */
+    object-fit: contain;
+}
+
+/* BRAND NAME: "JournIT" text beside the logo */
+.auth-brand-name {
+    font-family: var(--font-main);
+    font-size: 22px;
+    font-weight: bold;
+    color: var(--color-primary);
+}
+
+/* MAIN HEADING: "Welcome back" or "Create account" */
+.auth-heading {
+    font-family: var(--font-main);
+    font-size: 28px;
+    color: var(--color-text);
+    margin-bottom: 6px;
+    /* text-align: center centers the heading in the card */
+    text-align: center;
+}
+
+/* SUBTITLE: smaller text below heading */
+.auth-subtext {
+    font-size: 14px;
+    color: var(--color-text-light);
+    text-align: center;
+    margin-bottom: 28px;
+}
+
+/* AUTH FORM: groups all inputs together */
+/* display: flex + column stacks inputs vertically */
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* LABEL above each input */
+.auth-label {
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--color-text);
+    margin-bottom: 2px;
+}
+
+/* INPUT FIELDS: username and password boxes */
+.auth-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: var(--font-body);
+    color: var(--color-text);
+    background-color: var(--color-white);
+    /* outline: none removes the default blue browser outline */
+    outline: none;
+    /* transition animates the border color change on focus */
+    transition: border-color 0.2s ease;
+}
+
+/* When the user clicks into an input, the border turns primary color */
+/* :focus is a CSS pseudo-class that applies when element is selected */
+.auth-input:focus {
+    border-color: var(--color-primary);
+}
+
+/* SIGN IN / SIGN UP BUTTON */
+.auth-btn {
+    width: 100%;
+    padding: 13px;
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: bold;
+    /* cursor: pointer shows a hand cursor on hover */
+    cursor: pointer;
+    margin-top: 6px;
+    transition: background-color 0.2s ease;
+}
+
+/* Darken button slightly on hover to give click feedback */
+.auth-btn:hover {
+    background-color: #153d30;
+}
+
+/* SWITCH LINK: "Already have an account?" */
+.auth-switch {
+    text-align: center;
+    font-size: 13px;
+    color: var(--color-text-light);
+    margin-top: 4px;
+}
+
+/* The clickable link inside auth-switch */
+.auth-link {
+    color: var(--color-primary);
+    font-weight: bold;
+    /* text-decoration: underline makes it clearly a link */
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+/* AUTH FOOTER: thin info bar at the bottom */
+.auth-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--color-border);
+    background-color: var(--color-white);
+}
+
+.auth-footer-content {
+    display: flex;
+    gap: 24px;
+    font-size: 12px;
+    color: var(--color-text-light);
+    /* flex-wrap: wrap allows items to wrap to the next line
+       if the screen is too narrow to fit them all */
+    flex-wrap: wrap;
+}
+
+/* Version text pushed to the right */
+.auth-footer-version {
+    margin-left: auto;
+    color: var(--color-primary);
+    font-weight: bold;
+}
+
+
+/* ─────────────────────────────────────────────────
+   SECTION 3 — SHARED HEADER
+   Used on index.html, dashboard.html, account.html.
+   Same class names on all three pages — one CSS rule
+   styles all three headers automatically.
+───────────────────────────────────────────────── */
+
+/* MAIN BODY for non-auth pages */
+.main-body {
+    background-color: var(--color-bg);
+    min-height: 100vh;
+}
+
+/* HEADER WRAPPER: the sticky top bar */
+.main-header {
+    background-color: var(--color-white);
+    border-bottom: 1px solid var(--color-border);
+    /* position: sticky + top: 0 keeps header visible while scrolling */
+    position: sticky;
+    top: 0;
+    /* z-index: 100 ensures header stays above other content */
+    z-index: 100;
+}
+
+/* HEADER INNER: constrains max width and centers content */
+.header-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 14px 24px;
+    display: flex;
+    /* space-between pushes logo left and nav right */
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* HEADER LEFT: logo image + brand name side by side */
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* HEADER LOGO IMAGE */
+.header-logo {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+}
+
+/* HEADER BRAND NAME: "JournIT" */
+.header-brand {
+    font-family: var(--font-main);
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--color-text);
+}
+
+/* NAV LINKS CONTAINER */
+.main-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* INDIVIDUAL NAV LINKS */
+.nav-link {
+    font-size: 14px;
+    color: var(--color-text-light);
+    padding: 6px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.nav-link:hover {
+    color: var(--color-text);
+}
+
+/* ACTIVE PAGE INDICATOR: the circle around the current page link */
+/* This class is added manually to the correct link on each page */
+.nav-link.active-page {
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    font-weight: bold;
+}
+
+
+/* ─────────────────────────────────────────────────
+   SECTION 4 — HERO SLIDESHOW
+   The full-width image section on the homepage.
+───────────────────────────────────────────────── */
+
+/* HERO CONTAINER: the full-width image wrapper */
+.hero-section {
+    /* position: relative lets absolutely-positioned children
+       (text overlay, dots) position themselves inside it */
+    position: relative;
+    width: 100%;
+    height: 480px;
+    /* overflow: hidden clips images to stay within the box */
+    overflow: hidden;
+}
+
+/* INDIVIDUAL SLIDES: all stacked in the same position */
+.slide {
+    /* position: absolute + all edges 0 fills the full container */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* background-size: cover fills the slide without distortion */
+    background-size: cover;
+    /* background-position: center focuses on the middle of the image */
+    background-position: center;
+    /* opacity: 0 means invisible by default */
+    opacity: 0;
+    /* transition: opacity animates the fade in/out */
+    transition: opacity 1s ease;
+}
+
+/* ACTIVE SLIDE: the currently visible slide */
+/* JavaScript moves this class from one slide to the next */
+.slide.active {
+    opacity: 1;
+}
+
+/* TEXT OVERLAY: sits on top of all slides */
+.hero-text-overlay {
+    /* position: absolute + z-index places this above the slides */
+    position: absolute;
+    z-index: 10;
+    /* bottom and left position the text */
+    bottom: 80px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    /* pointer-events: none lets clicks pass through to slides */
+    pointer-events: none;
+}
+
+/* HERO TITLE: "JournIT" */
+.hero-title {
+    font-family: var(--font-main);
+    font-size: 56px;
+    font-weight: bold;
+    color: var(--color-white);
+    /* text-shadow adds depth so text is readable on any image */
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    margin-bottom: 8px;
+}
+
+/* HERO TAGLINE: subtitle text below the title */
+.hero-tagline {
+    font-size: 18px;
+    color: var(--color-white);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* SLIDE DOTS: row of dot indicators at the bottom */
+.slide-dots {
+    position: absolute;
+    bottom: 24px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    z-index: 10;
+}
+
+/* INDIVIDUAL DOT */
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    /* display: inline-block needed for width and height to work
+       on span elements */
+    display: inline-block;
+}
+
+/* ACTIVE DOT: filled white for the current slide */
+.dot.active {
+    background-color: var(--color-white);
+}
+
+
+/* ─────────────────────────────────────────────────
+   SECTION 5 — HOMEPAGE NAV CARDS AND PLANS SECTION
+───────────────────────────────────────────────── */
+
+/* THREE NAV CARDS CONTAINER */
+.home-nav-cards {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 32px 24px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* INDIVIDUAL NAV CARD */
+.nav-card {
+    background-color: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 24px 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    /* flex: 1 makes all three cards the same width */
+    flex: 1;
+    /* transition enables the hover animation */
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+    /* border: none removes default button border */
+    border: 1px solid var(--color-border);
+    font-family: var(--font-body);
+}
+
+/* NAV CARD HOVER: subtle lift effect */
+.nav-card:hover {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+/* translateY(-2px) moves the card 2px upward on hover
+   creating a subtle lift off the page effect */
+
+/* NAV CARD ICON IMAGE */
+.nav-card-icon {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+}
+
+/* NAV CARD LABEL TEXT */
+.nav-card-label {
+    font-size: 14px;
+    color: var(--color-text);
+}
+
+/* PLANS SECTION: the area below the three nav cards */
+#plans-section {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 24px 48px;
+}
+
+/* EMPTY STATE CARD: "No plans being tracked yet" box */
+.empty-state-card {
+    background-color: var(--color-white);
+    border-radius: var(--radius);
+    border: 1px solid var(--color-border);
+    padding: 48px 32px;
+    text-align: center;
+    /* display: flex + column centers everything vertically */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+/* COMPASS ICON WRAPPER: the light circle behind compass icon */
+.empty-state-icon-wrap {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background-color: var(--color-teal-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* COMPASS ICON IMAGE */
+.empty-state-icon {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+}
+
+/* EMPTY STATE TITLE */
+.empty-state-title {
+    font-family: var(--font-main);
+    font-size: 22px;
+    color: var(--color-text);
+}
+
+/* EMPTY STATE SUBTITLE */
+.empty-state-subtitle {
+    font-size: 14px;
+    color: var(--color-text-light);
+    max-width: 360px;
+    line-height: 1.6;
+}
+
+/* BROWSE PLANS BUTTON */
+.browse-btn {
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    border: none;
+    border-radius: 24px;
+    padding: 12px 28px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.browse-btn:hover {
+    background-color: #153d30;
+}
+
+/* TRACKING LAYOUT: two column layout when plan is being tracked */
+.tracking-layout {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+}
+
+/* LEFT COLUMN: checklist area */
+.tracking-left {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* CURRENTLY TRACKING LABEL */
+.tracking-label {
+    font-size: 11px;
+    font-weight: bold;
+    color: var(--color-accent);
+    letter-spacing: 0.08em;
+}
+/* letter-spacing adds space between each character
+   giving the uppercase label a professional look */
+
+/* TRACKING PLAN NAME heading */
+#tracking-plan-name {
+    font-family: var(--font-main);
+    font-size: 28px;
+    color: var(--color-text);
+}
+
+/* TRACKING SUMMARY: days count and budget */
+.tracking-summary {
+    font-size: 14px;
+    color: var(--color-text-light);
+}
+
+/* STOP TRACKING BUTTON */
+.stop-tracking-btn {
+    background-color: transparent;
+    border: 1px solid var(--color-accent);
+    color: var(--color-accent);
+    border-radius: 20px;
+    padding: 8px 18px;
+    font-size: 13px;
+    cursor: pointer;
+    width: fit-content;
+    transition: all 0.2s ease;
+}
+
+.stop-tracking-btn:hover {
+    background-color: var(--color-accent);
+    color: var(--color-white);
+}
+
+/* RIGHT COLUMN: progress tracker */
+.tracking-right {
+    flex: 1;
+    position: sticky;
+    /* top: 80px keeps it below the sticky header */
+    top: 80px;
+}
+
+/* PROGRESS CARD: the white box containing the tracker */
+.progress-card {
+    background-color: var(--color-white);
+    border-radius: var(--radius);
+    border: 1px solid var(--color-border);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+}
+
+/* PROGRESS TITLE */
+.progress-title {
+    font-family: var(--font-main);
+    font-size: 16px;
+    color: var(--color-text);
+}
+
+/* DONUT WRAPPER: centers the percentage display */
+.donut-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 16px 0;
+}
+
+/* DONUT CENTER: the percentage text */
+.donut-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+/* PERCENTAGE NUMBER */
+#progress-percent {
+    font-family: var(--font-main);
+    font-size: 36px;
+    font-weight: bold;
+    color: var(--color-primary);
+}
+
+/* "COMPLETE" label below percentage */
+.donut-label {
+    font-size: 11px;
+    color: var(--color-text-light);
+    letter-spacing: 0.08em;
+}
+
+/* STAT CARDS: activities and budget boxes */
+.stat-card {
+    background-color: var(--color-bg);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: var(--color-accent);
+    font-weight: bold;
+    margin-bottom: 4px;
+    letter-spacing: 0.05em;
+}
+
+.stat-value {
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--color-primary);
+}
+
+
+/* ─────────────────────────────────────────────────
+   SECTION 6 — DASHBOARD PAGE
+───────────────────────────────────────────────── */
+
+/* DASHBOARD MAIN CONTENT AREA */
+.dashboard-main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 36px 24px;
+    min-height: calc(100vh - 200px);
+}
+
+/* TOP BAR: heading left, Add Plan button right */
+.dashboard-top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 32px;
+}
+
+/* HEADING GROUP: title and subtitle stacked */
+.dashboard-heading-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.dashboard-heading {
+    font-family: var(--font-main);
+    font-size: 28px;
+    color: var(--color-text);
+}
+
+.dashboard-subtext {
+    font-size: 14px;
+    color: var(--color-text-light);
+}
+
+/* ADD PLAN BUTTON */
+.add-plan-btn {
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    border: none;
+    border-radius: 24px;
+    padding: 12px 22px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    /* white-space: nowrap prevents button text from wrapping */
+    white-space: nowrap;
+}
+
+.add-plan-btn:hover {
+    background-color: #153d30;
+}
+
+/* PLANS GRID: the container for all plan cards */
+#plans-grid {
+    display: grid;
+    /* auto-fill creates as many columns as fit */
+    /* minmax(260px, 1fr) means each column is at least 260px
+       but can grow to fill available space equally */
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+}
+
+/* PLAN CARD: individual itinerary card */
+/* JavaScript creates these and inserts them into #plans-grid */
+/* We style them here so they look correct when JS creates them */
+.plan-card {
+    background-color: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 24px;
+    cursor: pointer;
+    /* transition enables smooth hover grow animation */
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    /* position: relative lets the trash icon position inside it */
+    position: relative;
+    text-align: left;
+    width: 100%;
+    font-family: var(--font-body);
+}
+
+/* PLAN CARD HOVER: grows slightly and adds deeper shadow */
+.plan-card:hover {
+    transform: scale(1.03);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* PLAN CARD NAME: the title inside the card */
+.plan-card-name {
+    font-family: var(--font-main);
+    font-size: 20px;
+    color: var(--color-text);
+    margin-bottom: 14px;
+}
+
+/* PLAN CARD META: days and budget info row */
+.plan-card-meta {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+/* INDIVIDUAL META ITEM: icon + text */
+.plan-card-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-accent);
+}
+
+.plan-card-meta-icon {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+}
+
+/* CARD DELETE BUTTON: appears on hover at top right */
+.card-delete-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    /* opacity: 0 hides it — plan-card:hover makes it visible */
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    padding: 4px;
+}
+
+/* Show delete button when hovering over the card */
+.plan-card:hover .card-delete-btn {
+    opacity: 1;
+}
+
+.card-delete-icon {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+}
+
+/* CURRENTLY TRACKING BADGE on plan card */
+.card-tracking-badge {
+    display: inline-block;
+    font-size: 11px;
+    color: var(--color-primary);
+    background-color: var(--color-teal-light);
+    border-radius: 12px;
+    padding: 2px 10px;
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+/* ─── EXPANDED PLAN MODAL ─────────────────────── */
+
+/* The large modal box for expanded plan view */
+.expanded-modal-box {
+    background-color: var(--color-white);
+    border-radius: var(--radius);
+    width: 90%;
+    max-width: 750px;
+    max-height: 85vh;
+    /* overflow-y: auto adds a scrollbar when content is taller
+       than max-height — lets user scroll through many days */
+    overflow-y: auto;
+    position: relative;
+}
+
+/* EXPANDED STICKY HEADER: stays at top while scrolling days */
+.expanded-sticky-header {
+    position: sticky;
+    top: 0;
+    background-color: var(--color-white);
+    /* z-index: 10 keeps it above the day content when scrolling */
+    z-index: 10;
+    padding: 24px 28px 16px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.expanded-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.expanded-header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* EXPANDED PLAN NAME */
+#expanded-plan-name {
+    font-family: var(--font-main);
+    font-size: 26px;
+    color: var(--color-text);
+}
+
+/* EXPANDED PLAN META: days + budget + tracking badge */
+.expanded-plan-meta {
+    font-size: 14px;
+    color: var(--color-text-light);
+}
+
+/* CURRENTLY TRACKING BADGE in expanded modal */
+#currently-tracking-badge {
+    color: var(--color-primary);
+    font-weight: bold;
+    font-size: 13px;
+}
+
+/* HEADER ACTION BUTTONS: Track, Edit, Close */
+.expanded-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+/* TRACK BUTTON */
+.track-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background-color: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 13px;
+    color: var(--color-text);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.track-btn:hover {
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    border-color: var(--color-primary);
+}
+
+/* EDIT BUTTON */
+.edit-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background-color: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 13px;
+    color: var(--color-text);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.edit-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.btn-icon {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+}
+
+/* CLOSE BUTTON: × symbol */
+.close-modal-btn {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: var(--color-text-light);
+    cursor: pointer;
+    padding: 4px 8px;
+    transition: color 0.2s ease;
+}
+
+.close-modal-btn:hover {
+    color: var(--color-text);
+}
+
+/* DAY BOX inside expanded plan */
+/* JavaScript creates these, we style them here */
+.day-box {
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.day-box:last-child {
+    border-bottom: none;
+}
+
+/* DAY HEADER ROW: date label on left, budget on right */
+.day-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+/* DAY DATE LABEL: "Thu, May 7" */
+.day-date-label {
+    font-family: var(--font-main);
+    font-size: 18px;
+    color: var(--color-text);
+}
+
+/* DAY BUDGET BADGE */
+.day-budget-badge {
+    font-size: 13px;
+    color: var(--color-accent);
+    background-color: var(--color-coral-light);
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-weight: bold;
+}
+
+/* COMPLETED DAY BOX: light teal background when all done */
+.day-box.day-completed {
+    background-color: var(--color-teal-light);
+    border-radius: 8px;
+}
+
+/* ACTIVITY ROW: each individual activity item */
+.activity-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 0.5px solid var(--color-border);
+}
+
+.activity-row:last-child {
+    border-bottom: none;
+}
+
+/* ACTIVITY CHECKBOX */
+.activity-checkbox {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--color-border);
+    border-radius: 50%;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-top: 2px;
+    accent-color: var(--color-primary);
+}
+/* accent-color sets the checkmark color when checked */
+
+/* ACTIVITY DETAILS: name, time, location */
+.activity-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.activity-name {
+    font-size: 14px;
+    color: var(--color-text);
+}
+
+/* When activity is checked, name gets strikethrough */
+.activity-name.completed {
+    text-decoration: line-through;
+    color: var(--color-text-light);
+}
+
+/* TIME AND LOCATION row */
+.activity-meta {
+    display: flex;
+    gap: 16px;
+}
+
+.activity-time,
+.activity-location {
+    font-size: 12px;
+    color: var(--color-accent);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.activity-meta-icon {
+    width: 12px;
+    height: 12px;
+    object-fit: contain;
+}
+
+
+/* ─────────────────────────────────────────────────
+   SECTION 7 — ACCOUNT PAGE
+───────────────────────────────────────────────── */
+
+/* ACCOUNT MAIN: centers the card */
+.account-main {
+    max-width: 750px;
+    margin: 40px auto;
+    padding: 0 24px 48px;
+}
+
+/* THE ONE CARD: contains everything */
+.account-card {
+    background-color: var(--color-white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+/* overflow: hidden clips the dark banner so it respects
+   the card's rounded corners at the top */
+
+/* PROFILE BANNER: dark green top section */
+.profile-banner {
+    background-color: var(--color-primary);
+    padding: 40px 24px 60px;
+    text-align: center;
+    position: relative;
+}
+
+/* AVATAR CIRCLE: white circle with person icon */
+.avatar-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: var(--color-white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    /* border adds a white ring effect */
+    border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.avatar-icon {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+}
+
+/* USERNAME in banner */
+.profile-username {
+    font-family: var(--font-main);
+    font-size: 22px;
+    color: var(--color-white);
+    margin-bottom: 6px;
+}
+
+/* "JournIT Explorer" subtitle */
+.profile-subtitle {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* ACCOUNT DETAILS SECTION: white area below banner */
+.account-details-section {
+    padding: 28px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+/* SECTION HEADER ROW: title + edit button side by side */
+.section-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+/* SECTION TITLE: "Account Details" */
+.section-title {
+    font-family: var(--font-main);
+    font-size: 18px;
+    color: var(--color-text);
+}
+
+/* EDIT PROFILE BUTTON */
+.edit-profile-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 20px;
+    padding: 7px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--color-text);
+    transition: border-color 0.2s ease;
+}
+
+.edit-profile-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.btn-icon-small {
+    width: 12px;
+    height: 12px;
+    object-fit: contain;
+}
+
+/* DETAIL ROW: username or password row */
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 0;
+}
+
+/* LABEL: "Username" or "Password" on the left */
+.detail-label {
+    font-size: 14px;
+    color: var(--color-accent);
+    font-weight: bold;
+}
+
+/* VALUE GROUP: value text + optional eye button */
+.detail-value-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* VALUE TEXT on the right */
+.detail-value,
+#password-display {
+    font-size: 14px;
+    color: var(--color-text);
+}
+
+/* DIVIDER between detail rows */
+.detail-divider {
+    border: none;
+    border-top: 1px solid var(--color-border);
+}
+
+/* EYE BUTTON: reveal/hide password */
+.eye-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px;
+}
+
+.eye-icon {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+}
+
+.eye-btn:hover .eye-icon {
+    opacity: 1;
+}
+
+/* EDIT FORM WRAPPER: contains edit inputs */
+.edit-form-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background-color: var(--color-bg);
+    border-radius: 10px;
+    padding: 20px;
+}
+
+/* EDIT LABEL */
+.edit-label {
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--color-text);
+}
+
+/* EDIT INPUT: same style as auth inputs */
+.edit-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: var(--font-body);
+    outline: none;
+    transition: border-color 0.2s ease;
+    background-color: var(--color-white);
+    color: var(--color-text);
+}
+
+.edit-input:focus {
+    border-color: var(--color-primary);
+}
+
+/* EDIT BUTTONS ROW: Cancel and Save side by side */
+.edit-buttons-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+/* CANCEL EDIT BUTTON */
+.cancel-edit-btn {
+    flex: 1;
+    padding: 10px;
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    color: var(--color-text);
+    transition: border-color 0.2s ease;
+}
+
+.cancel-edit-btn:hover {
+    border-color: var(--color-text);
+}
+
+/* SAVE CHANGES BUTTON */
+.save-changes-btn {
+    flex: 1;
+    padding: 10px;
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.save-changes-btn:hover {
+    background-color: #153d30;
+}
+
+/* JOURNEY STATS SECTION */
+.journey-stats-section {
+    padding: 28px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.journey-stats-section .section-title {
+    margin-bottom: 16px;
+}
+
+/* STATS GRID: two boxes side by side */
+.stats-grid {
+    display: flex;
+    gap: 16px;
+}
+
+/* BASE STAT BOX */
+.stat-box {
+    flex: 1;
+    border-radius: 10px;
+    padding: 24px;
+    text-align: center;
+}
+
+/* TEAL STAT BOX: Total Plans */
+.stat-box-teal {
+    background-color: var(--color-teal-light);
+}
+
+/* CORAL STAT BOX: Completed */
+.stat-box-coral {
+    background-color: var(--color-coral-light);
+}
+
+/* BIG NUMBER in stat box */
+.stat-number {
+    font-family: var(--font-main);
+    font-size: 42px;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+.stat-box-teal .stat-number {
+    color: var(--color-primary);
+}
+
+.stat-box-coral .stat-number {
+    color: var(--color-accent);
+}
+
+/* LABEL under the number */
+.stat-box-label {
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 0.08em;
+    color: var(--color-text-light);
+}
+
+/* ACCOUNT ACTIONS: Log Out and Delete Account */
+.account-actions {
+    padding: 24px 28px;
+    display: flex;
+    gap: 16px;
+}
+
+/* LOG OUT BUTTON */
+.logout-btn {
+    flex: 1;
+    padding: 13px;
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    color: var(--color-text);
+    transition: border-color 0.2s ease;
+    font-family: var(--font-body);
+}
+
+.logout-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+/* DELETE ACCOUNT BUTTON */
+.delete-account-btn {
+    flex: 1;
+    padding: 13px;
+    background-color: var(--color-coral-light);
+    border: 1px solid var(--color-accent);
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    color: var(--color-accent);
+    transition: all 0.2s ease;
+    font-family: var(--font-body);
+}
+
+.delete-account-btn:hover {
+    background-color: var(--color-accent);
+    color: var(--color-white);
+}
+
+
+/* ─────────────────────────────────────────────────
+   SECTION 8 — MODALS
+   Shared styles used by ALL modals on ALL pages.
+   One set of rules styles every modal consistently.
+───────────────────────────────────────────────── */
+
+/* MODAL OVERLAY: the dark full-screen background */
+.modal-overlay {
+    /* position: fixed covers the entire viewport */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* semi-transparent dark background */
+    background-color: rgba(0, 0, 0, 0.4);
+    /* backdrop-filter blurs the content behind the overlay */
+    backdrop-filter: blur(4px);
+    /* flexbox centers the modal-box inside the overlay */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* z-index: 200 places modals above everything including header */
+    z-index: 200;
+    padding: 20px;
+}
+
+/* MODAL BOX: the white popup card */
+.modal-box {
+    background-color: var(--color-white);
+    border-radius: var(--radius);
+    padding: 32px;
+    width: 100%;
+    max-width: 480px;
+    position: relative;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.16);
+}
+
+/* LARGE MODAL BOX: for add/edit plan modals with many fields */
+.modal-box-large {
+    max-width: 680px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+/* CLOSE BUTTON in top-right corner of modal */
+.modal-close-top {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+}
+
+/* MODAL HEADING */
+.modal-heading {
+    font-family: var(--font-main);
+    font-size: 22px;
+    color: var(--color-text);
+    margin-bottom: 4px;
+}
+
+/* HORIZONTAL DIVIDER LINE inside modals */
+.modal-divider {
+    border: none;
+    border-top: 1px solid var(--color-border);
+    margin: 16px 0;
+}
+
+/* INNER CONTENT AREA: light background section in modals */
+.modal-inner-content {
+    background-color: var(--color-bg);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+/* FIELD LABEL inside modal */
+.modal-field-label {
+    font-size: 13px;
+    color: var(--color-text-light);
+    margin-bottom: 8px;
+}
+
+/* TEXT INPUT inside modal */
+.modal-text-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid var(--color-accent);
+    border-radius: 8px;
+    font-size: 15px;
+    font-family: var(--font-main);
+    outline: none;
+    color: var(--color-text);
+    background-color: var(--color-white);
+}
+
+.modal-text-input:focus {
+    border-color: var(--color-primary);
+}
+
+/* MODAL FOOTER ROW: bottom button area */
+.modal-footer-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+}
+
+/* CONTINUE BUTTON */
+.continue-btn {
+    background-color: var(--color-text-light);
+    color: var(--color-white);
+    border: none;
+    border-radius: 20px;
+    padding: 10px 24px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.continue-btn:hover {
+    background-color: var(--color-primary);
+}
+
+/* PLAN NAME EDIT INPUT: large editable name at top of modal */
+.plan-name-edit-input {
+    width: 100%;
+    font-family: var(--font-main);
+    font-size: 22px;
+    color: var(--color-text);
+    border: none;
+    border-bottom: 2px solid var(--color-border);
+    padding: 8px 4px;
+    outline: none;
+    background: transparent;
+    margin-bottom: 6px;
+    transition: border-color 0.2s ease;
+}
+
+.plan-name-edit-input:focus {
+    border-bottom-color: var(--color-primary);
+}
+
+/* MODAL PLAN SUMMARY: days and budget below name */
+.modal-plan-summary {
+    font-size: 13px;
+    color: var(--color-text-light);
+    margin-bottom: 8px;
+}
+
+/* DAY BLOCK inside add/edit modal */
+.day-form-block {
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 14px;
+    background-color: var(--color-bg);
+}
+
+/* DAY FORM HEADER: date picker and budget side by side */
+.day-form-header {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+/* DATE LABEL */
+.day-form-date-label {
+    font-size: 12px;
+    color: var(--color-text-light);
+    margin-bottom: 4px;
+}
+
+/* DATE INPUT: calendar picker */
+.date-input {
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: var(--font-body);
+    outline: none;
+    color: var(--color-text);
+    cursor: pointer;
+    background-color: var(--color-white);
+    transition: border-color 0.2s ease;
+    flex: 1;
+}
+
+.date-input:focus {
+    border-color: var(--color-primary);
+}
+
+/* BUDGET LABEL */
+.day-form-budget-label {
+    font-size: 12px;
+    color: var(--color-text-light);
+    margin-bottom: 4px;
+}
+
+/* BUDGET INPUT */
+.budget-input {
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: var(--font-body);
+    outline: none;
+    color: var(--color-text);
+    width: 120px;
+    background-color: var(--color-white);
+    transition: border-color 0.2s ease;
+}
+
+.budget-input:focus {
+    border-color: var(--color-primary);
+}
+
+/* ACTIVITIES LABEL */
+.activities-label {
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--color-text-light);
+    margin-bottom: 8px;
+    letter-spacing: 0.04em;
+}
+
+/* ACTIVITY FORM BLOCK: one activity row in add/edit modal */
+.activity-form-block {
+    background-color: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+    position: relative;
+}
+
+/* ACTIVITY DESCRIPTION INPUT */
+.activity-desc-input {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid var(--color-border);
+    padding: 6px 4px;
+    font-size: 14px;
+    font-family: var(--font-body);
+    outline: none;
+    color: var(--color-text);
+    background: transparent;
+    margin-bottom: 8px;
+    transition: border-color 0.2s ease;
+}
+
+.activity-desc-input:focus {
+    border-bottom-color: var(--color-primary);
+}
+
+/* TIME AND LOCATION INPUTS row */
+.activity-time-location-row {
+    display: flex;
+    gap: 10px;
+}
+
+.time-input,
+.location-input {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: var(--font-body);
+    outline: none;
+    color: var(--color-text);
+    background-color: var(--color-bg);
+    transition: border-color 0.2s ease;
+}
+
+.time-input:focus,
+.location-input:focus {
+    border-color: var(--color-primary);
+}
+
+/* ADD ACTIVITY BUTTON: dashed outline style */
+.add-activity-btn {
+    width: 100%;
+    padding: 10px;
+    border: 1.5px dashed var(--color-border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--color-primary);
+    font-size: 13px;
+    cursor: pointer;
+    margin-top: 6px;
+    transition: border-color 0.2s ease;
+    font-family: var(--font-body);
+}
+
+.add-activity-btn:hover {
+    border-color: var(--color-primary);
+}
+
+/* ADD DAY BUTTON: dashed outline at bottom */
+.add-day-btn {
+    width: 100%;
+    padding: 14px;
+    border: 1.5px dashed var(--color-border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--color-primary);
+    font-size: 14px;
+    cursor: pointer;
+    margin-bottom: 8px;
+    transition: border-color 0.2s ease;
+    font-family: var(--font-body);
+}
+
+.add-day-btn:hover {
+    border-color: var(--color-primary);
+}
+
+/* MODAL BOTTOM ROW: Back/Cancel and Complete/Save side by side */
+.modal-bottom-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+}
+
+/* BACK / CANCEL BUTTON */
+.back-btn {
+    background: none;
+    border: none;
+    font-size: 14px;
+    color: var(--color-text-light);
+    cursor: pointer;
+    padding: 10px;
+    transition: color 0.2s ease;
+    font-family: var(--font-body);
+}
+
+.back-btn:hover {
+    color: var(--color-text);
+}
+
+/* COMPLETE PLAN / SAVE BUTTON */
+.complete-plan-btn {
+    background-color: var(--color-accent);
+    color: var(--color-white);
+    border: none;
+    border-radius: 20px;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-family: var(--font-body);
+}
+
+.complete-plan-btn:hover {
+    background-color: #c9673e;
+}
+
+/* DELETE MODAL STYLES */
+.delete-modal-icon {
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.warning-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto;
+    object-fit: contain;
+}
+
+.delete-modal-title {
+    font-family: var(--font-main);
+    font-size: 20px;
+    color: var(--color-text);
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.delete-modal-message {
+    font-size: 14px;
+    color: var(--color-text-light);
+    text-align: center;
+    line-height: 1.6;
+    margin-bottom: 24px;
+}
+
+.delete-modal-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+/* CANCEL DELETE BUTTON */
+.cancel-delete-btn {
+    flex: 1;
+    padding: 12px;
+    background-color: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    color: var(--color-text);
+    transition: border-color 0.2s ease;
+    font-family: var(--font-body);
+}
+
+.cancel-delete-btn:hover {
+    border-color: var(--color-text);
+}
+
+/* CONFIRM DELETE BUTTON */
+.confirm-delete-btn {
+    flex: 1;
+    padding: 12px;
+    background-color: var(--color-accent);
+    color: var(--color-white);
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-family: var(--font-body);
+}
+
+.confirm-delete-btn:hover {
+    background-color: #c9673e;
+}
+
+/* DISABLED TRACK BUTTON: when plan is already being tracked */
+.track-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+
+/* ─────────────────────────────────────────────────
+   SECTION 9 — SHARED FOOTER
+   Same footer styles for all main pages.
+───────────────────────────────────────────────── */
+
+/* FOOTER WRAPPER */
+.main-footer {
+    background-color: var(--color-teal-light);
+    border-top: 1px solid var(--color-border);
+    padding: 20px 24px;
+}
+
+/* FOOTER INNER: constrains width and lays out content */
+.footer-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* FOOTER LEFT: contact info and email */
+.footer-left {
+    display: flex;
+    gap: 24px;
+    font-size: 12px;
+    color: var(--color-text-light);
+    flex-wrap: wrap;
+}
+
+/* FOOTER RIGHT: brand name and version */
+.footer-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+}
+
+.footer-brand {
+    font-family: var(--font-main);
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--color-primary);
+}
+
+.footer-version {
+    font-size: 11px;
+    color: var(--color-text-light);
+}
+/* ─────────────────────────────────────────────────
+   ADMIN PAGES
+   Styles for admin.html and admin-account.html.
+   Added at the bottom so they don't interfere
+   with any existing user page styles.
+───────────────────────────────────────────────── */
+
+/* ADMIN BODY PAGE: no background color needed
+   because the sidebar covers the left and the
+   content area has its own background */
+.admin-body-page {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    /* overflow: hidden prevents unwanted scrollbars
+       on the outer body level */
+    overflow: hidden;
+}
+
+/* ADMIN PAGE WRAPPER: flex column
+   header stacks above the body row */
+.admin-page-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    /* height: 100vh makes the whole layout
+       fill exactly the screen height */
+}
+
+/* ADMIN HEADER: full width light teal strip */
+.admin-header {
+    background-color: #E2FAFA;
+    padding: 12px 24px;
+    /* flex-shrink: 0 prevents the header from
+       shrinking when content is tall */
+    flex-shrink: 0;
+    border-bottom: 1px solid #C5EEEE;
+}
+
+.admin-header-inner {
+    display: flex;
+    align-items: center;
+}
+
+/* ADMIN BODY: flex row — sidebar + content */
+.admin-body {
+    display: flex;
+    /* flex: 1 makes this fill all remaining
+       vertical space below the header */
+    flex: 1;
+    /* overflow: hidden keeps the body contained */
+    overflow: hidden;
+}
+
+/* ADMIN SIDEBAR: dark teal fixed-width column */
+.admin-sidebar {
+    width: 210px;
+    background-color: var(--color-primary);
+    display: flex;
+    flex-direction: column;
+    padding: 24px 16px;
+    /* flex-shrink: 0 keeps sidebar at exactly 210px */
+    flex-shrink: 0;
+}
+
+/* ADMIN PROFILE AREA: avatar + name + role */
+.admin-profile-area {
+    background-color: var(--color-white);
+    border-radius: var(--radius);
+    padding: 16px 12px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ADMIN AVATAR CIRCLE: in the sidebar */
+.admin-avatar-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: var(--color-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.admin-avatar-icon {
+    width: 26px;
+    height: 26px;
+    object-fit: contain;
+    /* filter: invert makes the dark icon white
+       so it shows on the dark circle background */
+    filter: invert(1);
+}
+
+/* ADMIN SIDEBAR NAME: username text */
+.admin-sidebar-name {
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--color-text);
+}
+
+/* ADMIN SIDEBAR ROLE: "Administrator" text */
+.admin-sidebar-role {
+    font-size: 12px;
+    color: var(--color-text-light);
+}
+
+/* SPACER: pushes nav buttons to the bottom */
+.admin-sidebar-spacer {
+    flex: 1;
+}
+
+/* SIDEBAR NAV BUTTONS WRAPPER */
+.admin-sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* ACCOUNT BUTTON: white outlined style */
+.admin-nav-btn {
+    width: 100%;
+    padding: 11px;
+    background-color: var(--color-white);
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    color: var(--color-text);
+    transition: background-color 0.2s ease;
+    font-family: var(--font-body);
+}
+
+.admin-nav-btn:hover {
+    background-color: var(--color-bg);
+}
+
+/* SIGN OUT BUTTON: coral/red style */
+.admin-signout-btn {
+    width: 100%;
+    padding: 11px;
+    background-color: var(--color-accent);
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    color: var(--color-white);
+    transition: background-color 0.2s ease;
+    font-family: var(--font-body);
+}
+
+.admin-signout-btn:hover {
+    background-color: #c9673e;
+}
+
+/* ADMIN CONTENT: the scrollable right area */
+.admin-content {
+    flex: 1;
+    background-color: var(--color-bg);
+    padding: 36px 40px;
+    /* overflow-y: auto adds scrollbar when
+       content is taller than the screen */
+    overflow-y: auto;
+}
+
+/* ADMIN WELCOME SECTION */
+.admin-welcome {
+    margin-bottom: 28px;
+}
+
+.admin-welcome-heading {
+    font-family: var(--font-main);
+    font-size: 30px;
+    color: var(--color-text);
+    margin-bottom: 4px;
+}
+
+.admin-welcome-sub {
+    font-size: 15px;
+    color: var(--color-text-light);
+    margin-bottom: 16px;
+}
+
+/* DIVIDER LINE below welcome text */
+.admin-divider {
+    border: none;
+    border-top: 2px solid var(--color-primary);
+    margin-bottom: 28px;
+}
+
+/* STATISTICS HEADING */
+.admin-section-heading {
+    font-family: var(--font-main);
+    font-size: 24px;
+    color: var(--color-primary);
+    margin-bottom: 20px;
+}
+
+/* THREE STAT CARDS ROW */
+.admin-stat-cards-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+/* INDIVIDUAL STAT CARD */
+.admin-stat-card {
+    flex: 1;
+    background-color: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 28px 20px;
+    text-align: center;
+}
+
+/* BIG NUMBER in stat card */
+.admin-stat-number {
+    font-family: var(--font-main);
+    font-size: 48px;
+    font-weight: bold;
+    color: var(--color-primary);
+    margin-bottom: 8px;
+}
+
+/* LABEL below the number */
+.admin-stat-label {
+    font-size: 14px;
+    color: var(--color-text-light);
+}
+
+/* TWO COLUMN INFO SECTION */
+.admin-info-section {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+/* LEFT COLUMN: four info boxes */
+.admin-info-left {
+    flex: 1.2;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* INDIVIDUAL INFO BOX */
+.admin-info-box {
+    background-color: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    /* The light teal tint matching your design */
+    background-color: #EEF9F9;
+}
+
+/* INFO BOX LABEL: bold small text at top */
+.admin-info-label {
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--color-text);
+    margin-bottom: 4px;
+}
+
+/* INFO BOX VALUE: main answer text */
+.admin-info-value {
+    font-size: 16px;
+    color: var(--color-text);
+}
+
+/* RIGHT COLUMN: two teal boxes */
+.admin-info-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* TEAL BOX */
+.admin-teal-box {
+    background-color: var(--color-primary);
+    border-radius: var(--radius);
+    padding: 20px;
+    color: var(--color-white);
+    text-align: center;
+}
+
+/* TEAL BOX TITLE */
+.admin-teal-title {
+    font-family: var(--font-main);
+    font-size: 16px;
+    color: var(--color-white);
+    margin-bottom: 14px;
+}
+
+/* TEAL BOX CONTENT AREA */
+.admin-teal-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: left;
+}
+
+/* ROW inside teal box: key + value */
+.admin-teal-row {
+    display: flex;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--color-white);
+    align-items: center;
+}
+
+/* KEY LABEL: "Username:", "Plans:" */
+.admin-teal-key {
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.75);
+    /* white-space: nowrap keeps label on one line */
+    white-space: nowrap;
+}
+
+/* BIG NUMBER in tracked plans box */
+.admin-teal-number {
+    font-family: var(--font-main);
+    font-size: 48px;
+    font-weight: bold;
+    color: var(--color-white);
+    margin-top: 8px;
+}
+
+/* ADMIN ACCOUNT CARD: white card for account page */
+.admin-account-card {
+    background-color: var(--color-white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 32px;
+    max-width: 600px;
+}
+
+/* ADMIN PROFILE DISPLAY: always visible top of card */
+.admin-profile-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+/* LARGER AVATAR for account page */
+.admin-account-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: var(--color-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.admin-account-avatar-icon {
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+    filter: invert(1);
+}
+
+/* USERNAME on account page */
+.admin-account-username {
+    font-family: var(--font-main);
+    font-size: 22px;
+    color: var(--color-text);
+    font-weight: bold;
+}
+
+/* "JournIT Administrator" role label */
+.account-role-label {
+    font-size: 13px;
+    color: var(--color-text-light);
+}
+
+/* HINT TEXT below password input */
+.edit-hint {
+    font-size: 12px;
+    color: var(--color-text-light);
+    font-style: italic;
+    margin-top: 2px;
+}
+/* ─────────────────────────────────────────────────
+   DELETE DAY AND ACTIVITY BUTTONS
+   Added to support removing days and activities
+   from the add and edit plan modals.
+───────────────────────────────────────────────── */
+
+/* DELETE DAY BUTTON: appears below the day header */
+.delete-day-btn {
+    background: none;
+    border: 1px solid var(--color-accent);
+    color: var(--color-accent);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-bottom: 10px;
+    transition: all 0.2s ease;
+    font-family: var(--font-body);
+}
+
+.delete-day-btn:hover {
+    background-color: var(--color-accent);
+    color: var(--color-white);
+}
+
+/* DELETE ACTIVITY BUTTON: top right of each activity */
+.delete-activity-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: none;
+    border: none;
+    color: var(--color-text-light);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: color 0.2s ease;
+    font-family: var(--font-body);
+}
+
+.delete-activity-btn:hover {
+    color: var(--color-accent);
+}
+
+/* ACTIVITIES CONTAINER inside each day form block */
+.activities-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 8px;
+}

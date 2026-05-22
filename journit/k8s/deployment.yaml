@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: journit-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: journit-app
+  template:
+    metadata:
+      labels:
+        app: journit-app
+    spec:
+      containers:
+      - name: web-server
+        image: journit-app:v2
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80

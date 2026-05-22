@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JournIT - Account</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="main-body">
+
+
+<!-- ═══════════════════════════════════════════════
+     HEADER
+     Same sticky header as all pages.
+     Account link gets active-page class this time.
+═══════════════════════════════════════════════ -->
+<header class="main-header">
+    <div class="header-inner">
+        <div class="header-left">
+            <img src="images/logo.png"
+                 alt="JournIT Logo"
+                 class="header-logo">
+            <span class="header-brand">JournIT</span>
+        </div>
+        <nav class="main-nav">
+            <a href="index.html"
+               class="nav-link">Home</a>
+            <a href="dashboard.html"
+               class="nav-link">Dashboard</a>
+            <!-- active-page is on Account this time -->
+            <a href="account.html"
+               class="nav-link active-page">Account</a>
+        </nav>
+    </div>
+</header>
+
+
+<!-- ═══════════════════════════════════════════════
+     MAIN CONTENT
+     Centers the single account card on the page.
+═══════════════════════════════════════════════ -->
+<main class="account-main">
+
+    <!-- THE ONE CARD: contains everything below the header -->
+    <div class="account-card">
+
+
+        <!-- ─────────────────────────────────────────
+             PROFILE BANNER SECTION
+             Dark green top of the card.
+             Avatar circle, username, subtitle inside.
+        ───────────────────────────────────────────── -->
+        <div class="profile-banner">
+
+            <!-- AVATAR CIRCLE: white circle with person icon -->
+            <!-- CSS makes this a circle using border-radius:50% -->
+            <div class="avatar-circle">
+                <img src="images/user-icon.png"
+                     alt="Profile"
+                     class="avatar-icon">
+            </div>
+
+            <!-- USERNAME: empty at first, JS fills it on page load -->
+            <p id="display-username" class="profile-username"></p>
+
+            <!-- SUBTITLE: same for every user, hardcoded in HTML -->
+            <p class="profile-subtitle">JournIT Explorer</p>
+
+        </div>
+        <!-- end profile-banner -->
+
+
+        <!-- ─────────────────────────────────────────
+             ACCOUNT DETAILS SECTION
+             Contains two states: view and edit.
+             Only one is visible at a time.
+        ───────────────────────────────────────────── -->
+        <div class="account-details-section">
+
+            <!-- VIEW STATE: shown by default ─────────
+                 Read-only display of username and password.
+                 Edit Profile button triggers switch to edit state.
+            ─────────────────────────────────────────── -->
+            <div id="profile-view-state">
+
+                <!-- SECTION HEADER ROW: title + edit button -->
+                <div class="section-header-row">
+                    <h3 class="section-title">Account Details</h3>
+                    <!-- EDIT PROFILE BUTTON -->
+                    <!-- onclick switches to edit state -->
+                    <button class="edit-profile-btn"
+                            onclick="showEditState()">
+                        <img src="images/edit-icon.png"
+                             alt="Edit"
+                             class="btn-icon-small">
+                        Edit Profile
+                    </button>
+                </div>
+
+                <!-- USERNAME ROW: label on left, value on right -->
+                <div class="detail-row">
+                    <span class="detail-label">Username</span>
+                    <!-- JS fills this with the real username -->
+                    <span id="view-username"
+                          class="detail-value"></span>
+                </div>
+
+                <!-- DIVIDER LINE between rows -->
+                <hr class="detail-divider">
+
+                <!-- PASSWORD ROW: label left, dots + eye icon right -->
+                <div class="detail-row">
+                    <span class="detail-label">Password</span>
+                    <div class="detail-value-group">
+                        <!-- Shows dots by default -->
+                        <!-- JS replaces with real password when
+                             eye icon is clicked -->
+                        <span id="password-display">
+                            &#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;
+                        </span>
+                        <!-- &#8226; is the HTML entity for • bullet -->
+
+                        <!-- EYE ICON BUTTON: toggles password visibility -->
+                        <button class="eye-btn"
+                                onclick="togglePasswordVisibility()">
+                            <img src="images/eye-icon.png"
+                                 alt="Show password"
+                                 class="eye-icon"
+                                 id="eye-icon-img">
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+            <!-- end profile-view-state -->
+
+
+            <!-- EDIT STATE: hidden by default ────────
+                 Appears when Edit Profile is clicked.
+                 Input fields pre-filled with current values.
+                 Save Changes sends updates to PHP.
+                 Cancel returns to view state.
+            ─────────────────────────────────────────── -->
+            <div id="profile-edit-state" class="hidden">
+
+                <!-- SECTION HEADER -->
+                <h3 class="section-title">Account Details</h3>
+
+                <!-- EDIT FORM WRAPPER -->
+                <div class="edit-form-wrapper">
+
+                    <!-- USERNAME INPUT -->
+                    <label class="edit-label"
+                           for="edit-username-input">
+                        Username
+                    </label>
+                    <!-- pre-filled by JS when edit state opens -->
+                    <input type="text"
+                           id="edit-username-input"
+                           class="edit-input"
+                           placeholder="Enter new username">
+
+                    <!-- PASSWORD INPUT -->
+                    <label class="edit-label"
+                           for="edit-password-input">
+                        Password
+                    </label>
+                    <!-- type="password" hides characters with dots -->
+                    <input type="password"
+                           id="edit-password-input"
+                           class="edit-input"
+                           placeholder="Enter new password">
+
+                    <!-- EDIT BUTTONS: Cancel and Save side by side -->
+                    <div class="edit-buttons-row">
+
+                        <!-- CANCEL: returns to view state -->
+                        <button class="cancel-edit-btn"
+                                onclick="hideEditState()">
+                            &#x2715; Cancel
+                        </button>
+
+                        <!-- SAVE CHANGES: sends update to PHP -->
+                        <button class="save-changes-btn"
+                                onclick="saveProfileChanges()">
+                            &#128190; Save Changes
+                        </button>
+                        <!-- &#128190; is the floppy disk emoji -->
+
+                    </div>
+
+                </div>
+                <!-- end edit-form-wrapper -->
+
+            </div>
+            <!-- end profile-edit-state -->
+
+        </div>
+        <!-- end account-details-section -->
+
+
+        <!-- ─────────────────────────────────────────
+             JOURNEY STATS SECTION
+             Two colored boxes side by side.
+             Numbers start at 0 — JS fills them from DB.
+        ───────────────────────────────────────────── -->
+        <div class="journey-stats-section">
+
+            <h3 class="section-title">Your Journey Stats</h3>
+
+            <!-- STATS GRID: two boxes side by side via CSS flexbox -->
+            <div class="stats-grid">
+
+                <!-- TOTAL PLANS BOX: teal background -->
+                <div class="stat-box stat-box-teal">
+                    <!-- Big number — JS fills this from database -->
+                    <p id="total-plans-count"
+                       class="stat-number">0</p>
+                    <p class="stat-box-label">TOTAL PLANS</p>
+                </div>
+
+                <!-- COMPLETED BOX: coral/salmon background -->
+                <div class="stat-box stat-box-coral">
+                    <!-- Big number — JS fills this from database -->
+                    <p id="completed-count"
+                       class="stat-number">0</p>
+                    <p class="stat-box-label">COMPLETED</p>
+                </div>
+
+            </div>
+            <!-- end stats-grid -->
+
+        </div>
+        <!-- end journey-stats-section -->
+
+
+        <!-- ─────────────────────────────────────────
+             ACCOUNT ACTION BUTTONS
+             Log Out and Delete Account side by side.
+             Full width of the card.
+        ───────────────────────────────────────────── -->
+        <div class="account-actions">
+
+            <!-- LOG OUT BUTTON -->
+            <!-- calls logout() in script.js -->
+            <!-- JS ends PHP session and redirects to signin -->
+            <button class="logout-btn"
+                    onclick="logout()">
+                &#x2192; Log Out
+            </button>
+            <!-- &#x2192; is the HTML entity for → arrow -->
+
+            <!-- DELETE ACCOUNT BUTTON -->
+            <!-- opens the confirmation modal — does not delete yet -->
+            <button class="delete-account-btn"
+                    onclick="openDeleteAccountModal()">
+                &#128465; Delete Account
+            </button>
+            <!-- &#128465; is the HTML entity for 🗑 trash icon -->
+
+        </div>
+        <!-- end account-actions -->
+
+
+    </div>
+    <!-- end account-card -->
+
+</main>
+
+
+<!-- ═══════════════════════════════════════════════
+     DELETE ACCOUNT MODAL
+     One modal on this page.
+     Same hidden/visible pattern as dashboard modals.
+     Confirming deletes account AND all plans from DB.
+═══════════════════════════════════════════════ -->
+<div id="delete-account-modal"
+     class="modal-overlay hidden">
+
+    <div class="modal-box">
+
+        <!-- WARNING ICON -->
+        <div class="delete-modal-icon">
+            <img src="images/warning-icon.png"
+                 alt="Warning"
+                 class="warning-icon">
+        </div>
+
+        <!-- TITLE -->
+        <h3 class="delete-modal-title">Delete Account</h3>
+
+        <!-- WARNING MESSAGE -->
+        <!-- Stronger warning than plan deletion because
+             this removes the account AND all plans forever -->
+        <p class="delete-modal-message">
+            Are you sure you want to delete your account?
+            This will permanently remove your account and
+            all your itineraries. This action cannot be undone.
+        </p>
+
+        <!-- BUTTONS -->
+        <div class="delete-modal-buttons">
+
+            <!-- CANCEL: closes modal, nothing is deleted -->
+            <button class="cancel-delete-btn"
+                    onclick="closeDeleteAccountModal()">
+                Cancel
+            </button>
+
+            <!-- CONFIRM DELETE: calls JS function -->
+            <!-- JS sends delete request to PHP -->
+            <!-- PHP deletes account + all plans + ends session -->
+            <!-- Then redirects to signin.html -->
+            <button class="confirm-delete-btn"
+                    onclick="confirmDeleteAccount()">
+                Delete Account
+            </button>
+
+        </div>
+
+    </div>
+    <!-- end modal-box -->
+
+</div>
+<!-- end delete-account-modal -->
+
+
+<!-- ═══════════════════════════════════════════════
+     FOOTER
+     Same footer as all pages.
+     Identical class names — CSS styles all the same.
+═══════════════════════════════════════════════ -->
+<footer class="main-footer">
+    <div class="footer-inner">
+        <div class="footer-left">
+            <span>Contact us: 09938653644</span>
+            <span>Email Us: JournIT@gmail.com</span>
+        </div>
+        <div class="footer-right">
+            <span class="footer-brand">JournIT</span>
+            <span class="footer-version">Version 1.0.0</span>
+        </div>
+    </div>
+</footer>
+
+
+<!-- SCRIPT: always last -->
+<script src="js/script.js"></script>
+
+</body>
+</html>
