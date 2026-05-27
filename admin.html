@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JournIT - Admin Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="admin-body-page">
+
+
+<!-- ═══════════════════════════════════════════════
+     ADMIN PAGE WRAPPER
+     Outer container for the entire admin page.
+     CSS makes this a flex column so:
+     - header sits on top (full width)
+     - admin-body sits below (sidebar + content)
+═══════════════════════════════════════════════ -->
+<div class="admin-page-wrapper">
+
+
+    <!-- ═══════════════════════════════════════════
+         ADMIN HEADER
+         Full width light teal strip at the top.
+         Background color: #E2FAFA
+         Contains only the JournIT logo and name.
+    ═══════════════════════════════════════════ -->
+    <div class="admin-header">
+        <div class="admin-header-inner">
+
+            <!-- LOGO AND BRAND NAME: same pattern as main site -->
+            <div class="header-left">
+                <img src="images/logo.png"
+                     alt="JournIT Logo"
+                     class="header-logo">
+                <span class="header-brand">JournIT</span>
+            </div>
+
+        </div>
+    </div>
+    <!-- end admin-header -->
+
+
+    <!-- ═══════════════════════════════════════════
+         ADMIN BODY
+         Sits below the header.
+         CSS makes this a flex ROW so:
+         - sidebar is on the left (fixed width)
+         - main content is on the right (fills rest)
+    ═══════════════════════════════════════════ -->
+    <div class="admin-body">
+
+
+        <!-- ─────────────────────────────────────
+             SIDEBAR
+             <aside> is the semantic tag for
+             secondary/navigation content beside
+             the main content area.
+             Dark teal background, fixed width.
+             Never scrolls — stays in place.
+        ───────────────────────────────────────── -->
+        <aside class="admin-sidebar">
+
+            <!-- ADMIN PROFILE AREA -->
+            <div class="admin-profile-area">
+
+                <!-- AVATAR CIRCLE: same pattern as account page -->
+                <div class="admin-avatar-circle">
+                    <img src="images/user-icon.png"
+                         alt="Admin"
+                         class="admin-avatar-icon">
+                </div>
+
+                <!-- ADMIN NAME: filled by JavaScript on load -->
+                <!-- JS reads the session and writes the username here -->
+                <p id="admin-display-name"
+                   class="admin-sidebar-name"></p>
+
+                <!-- ROLE LABEL: always "Administrator" for admin users -->
+                <p class="admin-sidebar-role">Administrator</p>
+
+            </div>
+            <!-- end admin-profile-area -->
+
+            <!-- SPACER: pushes the nav buttons to the bottom -->
+            <!-- flex-grow: 1 in CSS makes this fill available space -->
+            <div class="admin-sidebar-spacer"></div>
+
+            <!-- SIDEBAR NAV BUTTONS -->
+            <div class="admin-sidebar-nav">
+
+                <!-- ACCOUNT BUTTON: navigates to admin-account.html -->
+                <button class="admin-nav-btn"
+                        onclick="window.location.href=
+                        'admin-account.html'">
+                    Account
+                </button>
+
+                <!-- SIGN OUT BUTTON: calls adminSignOut() in script.js -->
+                <!-- That function ends the PHP session and
+                     redirects to signin.html -->
+                <button class="admin-signout-btn"
+                        onclick="adminSignOut()">
+                    Sign Out
+                </button>
+
+            </div>
+            <!-- end admin-sidebar-nav -->
+
+        </aside>
+        <!-- end admin-sidebar -->
+
+
+        <!-- ─────────────────────────────────────
+             MAIN CONTENT AREA
+             Takes all horizontal space beside sidebar.
+             Scrollable when content is tall.
+             Warm off-white background.
+        ───────────────────────────────────────── -->
+        <main class="admin-content">
+
+            <!-- WELCOME SECTION -->
+            <div class="admin-welcome">
+
+                <!-- WELCOME HEADING: "Welcome, [username]" -->
+                <!-- The span starts empty — JS fills the name -->
+                <h1 class="admin-welcome-heading">
+                    Welcome,
+                    <span id="admin-welcome-name"></span>
+                </h1>
+
+                <p class="admin-welcome-sub">
+                    Explore your Dashboard
+                </p>
+
+                <!-- DIVIDER LINE below welcome text -->
+                <hr class="admin-divider">
+
+            </div>
+            <!-- end admin-welcome -->
+
+
+            <!-- STATISTICS SECTION -->
+            <div class="admin-statistics">
+
+                <h2 class="admin-section-heading">
+                    Statistics
+                </h2>
+
+                <!-- THREE STAT CARDS ROW -->
+                <!-- Each card shows a big number and a label -->
+                <!-- Numbers start as — and JS fills them -->
+                <div class="admin-stat-cards-row">
+
+                    <!-- CARD 1: Total registered users -->
+                    <div class="admin-stat-card">
+                        <!-- id lets JS find and update this number -->
+                        <p id="stat-user-total"
+                           class="admin-stat-number">&#8212;</p>
+                        <!-- &#8212; is the HTML entity for — em dash -->
+                        <p class="admin-stat-label">User Total</p>
+                    </div>
+
+                    <!-- CARD 2: Total plans created by all users -->
+                    <div class="admin-stat-card">
+                        <p id="stat-itinerary-total"
+                           class="admin-stat-number">&#8212;</p>
+                        <p class="admin-stat-label">
+                            Itinerary Total
+                        </p>
+                    </div>
+
+                    <!-- CARD 3: Total completed plans across all users -->
+                    <div class="admin-stat-card">
+                        <p id="stat-completion-total"
+                           class="admin-stat-number">&#8212;</p>
+                        <p class="admin-stat-label">
+                            Completion Total
+                        </p>
+                    </div>
+
+                </div>
+                <!-- end admin-stat-cards-row -->
+
+
+                <!-- TWO COLUMN INFO SECTION -->
+                <!-- Left: four info boxes stacked -->
+                <!-- Right: two teal boxes stacked -->
+                <div class="admin-info-section">
+
+
+                    <!-- LEFT COLUMN: four info boxes -->
+                    <div class="admin-info-left">
+
+                        <!-- INFO BOX 1: Most Popular Plan -->
+                        <!-- Shows the plan name that appears most
+                             across all users e.g. "Baguio Date (12 times)" -->
+                        <div class="admin-info-box">
+                            <p class="admin-info-label">
+                                Most Popular Plan
+                            </p>
+                            <p id="stat-popular-plan"
+                               class="admin-info-value">&#8212;</p>
+                        </div>
+
+                        <!-- INFO BOX 2: Most Popular Location -->
+                        <!-- The location that appears most across
+                             all activities e.g. "Vermosa (8 times)" -->
+                        <div class="admin-info-box">
+                            <p class="admin-info-label">
+                                Most Popular Location
+                            </p>
+                            <p id="stat-popular-location"
+                               class="admin-info-value">&#8212;</p>
+                        </div>
+
+                        <!-- INFO BOX 3: Common Itinerary Day -->
+                        <!-- The day of the week most activities
+                             are scheduled on e.g. "Saturday (15 times)" -->
+                        <div class="admin-info-box">
+                            <p class="admin-info-label">
+                                Common Itinerary Day
+                            </p>
+                            <p id="stat-common-day"
+                               class="admin-info-value">&#8212;</p>
+                        </div>
+
+                        <!-- INFO BOX 4: Common Itinerary Length -->
+                        <!-- The most common number of days a plan has
+                             e.g. "3 Days (9 plans)" -->
+                        <div class="admin-info-box">
+                            <p class="admin-info-label">
+                                Common Itinerary Length
+                            </p>
+                            <p id="stat-common-length"
+                               class="admin-info-value">&#8212;</p>
+                        </div>
+
+                    </div>
+                    <!-- end admin-info-left -->
+
+
+                    <!-- RIGHT COLUMN: two teal boxes -->
+                    <div class="admin-info-right">
+
+                        <!-- TEAL BOX 1: Most Active User -->
+                        <!-- The user who has created the most plans -->
+                        <div class="admin-teal-box">
+
+                            <h3 class="admin-teal-title">
+                                Most Active User
+                            </h3>
+
+                            <div class="admin-teal-content">
+
+                                <!-- Username of most active user -->
+                                <!-- JS fills this from PHP response -->
+                                <p class="admin-teal-row">
+                                    <span class="admin-teal-key">
+                                        Username:
+                                    </span>
+                                    <span id="stat-active-username">
+                                        &#8212;
+                                    </span>
+                                </p>
+
+                                <!-- Number of plans that user has made -->
+                                <p class="admin-teal-row">
+                                    <span class="admin-teal-key">
+                                        Plans:
+                                    </span>
+                                    <span id="stat-active-plans">
+                                        &#8212;
+                                    </span>
+                                </p>
+
+                            </div>
+
+                        </div>
+                        <!-- end teal box 1 -->
+
+
+                        <!-- TEAL BOX 2: Current Plans Being Tracked -->
+                        <!-- COUNT of plans where is_tracked = 1 -->
+                        <!-- across ALL users right now -->
+                        <div class="admin-teal-box">
+
+                            <h3 class="admin-teal-title">
+                                Current Plans Being Tracked
+                            </h3>
+
+                            <!-- Big number — filled by JavaScript -->
+                            <p id="stat-tracked-count"
+                               class="admin-teal-number">
+                                &#8212;
+                            </p>
+
+                        </div>
+                        <!-- end teal box 2 -->
+
+                    </div>
+                    <!-- end admin-info-right -->
+
+                </div>
+                <!-- end admin-info-section -->
+
+            </div>
+            <!-- end admin-statistics -->
+
+        </main>
+        <!-- end admin-content -->
+
+    </div>
+    <!-- end admin-body -->
+
+</div>
+<!-- end admin-page-wrapper -->
+
+
+<!-- SCRIPT: always last -->
+<script src="js/script.js"></script>
+
+</body>
+</html>
